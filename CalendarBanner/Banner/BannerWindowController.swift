@@ -15,28 +15,22 @@ final class BannerWindowController {
 
         let bannerW: CGFloat = Self.bannerWidth(forScreenWidth: screen.frame.width)
         let bannerH: CGFloat = 80
-        let charSize: CGFloat = 56
-        let charGap: CGFloat  = 6
-        let totalW = bannerW + charGap + charSize
+        let oarExtra: CGFloat = 22   // oars overhang above/below body
+        let totalW = bannerW
+        let panelH = bannerH + oarExtra * 2  // 124
 
         let y = Self.bannerY(
             screenHeight: screen.frame.height,
             verticalPosition: preferences.verticalPosition
         ) + CGFloat(panels.count) * (bannerH + 12)
 
-        let panelH = bannerH + charSize * 0.4
         let panel = makePanel(width: totalW, height: panelH)
 
         let hostingView = NSHostingView(rootView:
-            BannerWithCharacter(
+            BannerView(
                 event: event,
                 minutesBefore: minutesBefore,
                 preferences: preferences,
-                bannerWidth: bannerW,
-                bannerHeight: bannerH,
-                charSize: charSize,
-                charGap: charGap,
-                panelHeight: panelH,
                 onOpen: {
                     Self.openCalendarEvent(event)
                 },
@@ -57,7 +51,7 @@ final class BannerWindowController {
         panel.contentView = hostingView
 
         let startX  = screen.frame.minX - totalW - 20
-        let centerX = screen.frame.minX + (screen.frame.width - bannerW) / 2 - charGap - charSize
+        let centerX = screen.frame.minX + (screen.frame.width - bannerW) / 2
         let endX    = screen.frame.maxX + 20
         let originY = screen.frame.minY + y - (panelH - bannerH) / 2
 
@@ -221,99 +215,6 @@ final class BannerWindowController {
             if FileManager.default.fileExists(atPath: path) {
                 NSWorkspace.shared.open(url)
                 return
-            }
-        }
-    }
-}
-
-// MARK: - 横幅 + 小人 合体视图
-
-struct BannerWithCharacter: View {
-    let event: CalendarEvent
-    let minutesBefore: Int
-    let preferences: PreferencesStore
-    let bannerWidth: CGFloat
-    let bannerHeight: CGFloat
-    let charSize: CGFloat
-    let charGap: CGFloat
-    let panelHeight: CGFloat
-    var onOpen: (() -> Void)?
-    var onClose: (() -> Void)?
-    var onSnooze: (() -> Void)?
-
-    // 用 Bool 驱动动画，避免多个 withAnimation 互相覆盖
-    @State private var bobbing = false    // 上下弹跳
-    @State private var leaning = false   // 前倾角
-    @State private var swaying = false   // 左右微晃
-    @State private var ropePulled = false // 绳子张紧
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            Color.clear
-                .frame(width: bannerWidth + charGap + charSize, height: panelHeight)
-
-            // 横幅本体
-            BannerView(
-                event: event,
-                minutesBefore: minutesBefore,
-                preferences: preferences,
-                onOpen: onOpen,
-                onClose: onClose,
-                onSnooze: onSnooze
-            )
-            .frame(width: bannerWidth, height: bannerHeight)
-            .alignmentGuide(.bottom) { d in d[.bottom] }
-
-            // 绳子：连接横幅右端与小人
-            Canvas { ctx, size in
-                let startX: CGFloat = bannerWidth - 2
-                let midY: CGFloat = size.height - bannerHeight / 2
-                let endX: CGFloat = bannerWidth + charGap + charSize * 0.12
-
-                var path = Path()
-                path.move(to: CGPoint(x: startX, y: midY))
-                // 绳子弛度：拉紧时弧度小，松弛时弧度大
-                let slack: CGFloat = ropePulled ? 5 : 9
-                path.addQuadCurve(
-                    to: CGPoint(x: endX, y: midY - 2),
-                    control: CGPoint(x: (startX + endX) / 2, y: midY + slack)
-                )
-                ctx.stroke(path, with: .color(.secondary.opacity(0.55)), lineWidth: 1.5)
-            }
-            .frame(width: bannerWidth + charGap + charSize, height: panelHeight)
-            .allowsHitTesting(false)
-            .animation(.easeInOut(duration: 0.19).repeatForever(autoreverses: true), value: ropePulled)
-
-            // 小人：静态位置 + 三组独立动画叠加
-            ZStack {
-                Circle()
-                    .fill(Color.white.opacity(0.88))
-                    .frame(width: charSize, height: charSize)
-                    .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
-
-                Text("🏃")
-                    .font(.system(size: charSize * 0.8))
-                    .scaleEffect(x: -1, y: 1)  // 水平翻转朝右
-            }
-            // 动画1：前倾（以脚底为轴，-5°↔-15°）
-            .rotationEffect(.degrees(leaning ? -15 : -5), anchor: .bottom)
-            .animation(.easeInOut(duration: 0.26).repeatForever(autoreverses: true), value: leaning)
-            // 动画2：上下弹跳（12pt，跑步节奏）
-            .offset(y: bobbing ? -12 : 0)
-            .animation(.easeInOut(duration: 0.19).repeatForever(autoreverses: true), value: bobbing)
-            // 静态位置 + 动画3：左右微晃（±2pt）
-            .offset(
-                x: bannerWidth + charGap + (swaying ? 2 : -2),
-                y: -(bannerHeight - charSize) / 2
-            )
-            .animation(.easeInOut(duration: 0.32).repeatForever(autoreverses: true), value: swaying)
-            .frame(width: charSize, height: charSize)
-            .onAppear {
-                // 各动画独立启动，SwiftUI 会分别跟踪各自 value 的变化
-                bobbing    = true
-                leaning    = true
-                swaying    = true
-                ropePulled = true
             }
         }
     }
