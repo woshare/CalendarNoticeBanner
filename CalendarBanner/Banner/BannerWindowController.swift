@@ -46,17 +46,13 @@ final class BannerWindowController {
         panel.orderFrontRegardless()
         panels.append(panel)
 
-        // 入场：1.0s spring 弹性缓动（慢起→加速→轻微过冲→回弹落定）
-        animateX(panel: panel, from: startX, to: centerX, y: originY, duration: 1.0, easing: springEaseOut) { [weak self, weak panel] in
+        // 入场：拖拽感动画，完成后等待 bannerDuration 秒再出场
+        animateEntry(panel: panel, from: startX, to: centerX, baseY: originY, duration: 2.0) { [weak self, weak panel] in
             guard let panel = panel else { return }
-            let duration = self?.preferences.bannerDuration ?? 5.0
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self, weak panel] in
+            let holdDuration = self?.preferences.bannerDuration ?? 5.0
+            DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration) { [weak self, weak panel] in
                 guard let panel = panel else { return }
-                // 出场：0.6s 强 easeIn（越来越快，像被拉走）
-                self?.animateX(panel: panel, from: centerX, to: endX, y: originY, duration: 0.6, easing: self?.strongEaseIn ?? { $0 }) { [weak self, weak panel] in
-                    guard let panel = panel else { return }
-                    self?.remove(panel: panel)
-                }
+                self?.animateExit(panel: panel, from: centerX, to: endX, baseY: originY)
             }
         }
     }
@@ -65,11 +61,8 @@ final class BannerWindowController {
         let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) } ?? NSScreen.main ?? NSScreen.screens[0]
         let endX = screen.frame.maxX + 20
         let currentX = panel.frame.origin.x
-        let originY = panel.frame.origin.y
-        animateX(panel: panel, from: currentX, to: endX, y: originY, duration: 0.4, easing: strongEaseIn) { [weak self, weak panel] in
-            guard let panel = panel else { return }
-            self?.remove(panel: panel)
-        }
+        let baseY = panel.frame.origin.y
+        animateExit(panel: panel, from: currentX, to: endX, baseY: baseY)
     }
 
     private func remove(panel: NSPanel) {
@@ -77,43 +70,72 @@ final class BannerWindowController {
         panels.removeAll { $0 === panel }
     }
 
-    // MARK: - Timer-based animation
+    // MARK: - 入场动画：小人拖拽感
+    //
+    // X 轴：三次方时间扭曲 + spring 过冲
+    //   - 前段极慢（小人开始用力拉）
+    //   - 中段快速划过屏幕
+    //   - 末段轻微过冲 ~8% 后回弹落定
+    //
+    // Y 轴：走路节奏上下摆动 4pt，接近终点时逐渐消失
+    //   模拟小人步伐带动弹窗晃动
 
-    private func animateX(
+    private func animateEntry(
         panel: NSPanel,
         from startX: CGFloat,
         to endX: CGFloat,
-        y: CGFloat,
+        baseY: CGFloat,
         duration: Double,
-        easing: @escaping (Double) -> Double,
         completion: @escaping () -> Void
     ) {
         let startTime = Date()
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak panel] t in
             guard let panel = panel else { t.invalidate(); return }
             let elapsed = Date().timeIntervalSince(startTime)
-            let rawProgress = min(elapsed / duration, 1.0)
-            let x = startX + (endX - startX) * CGFloat(easing(rawProgress))
-            panel.setFrameOrigin(NSPoint(x: x, y: y))
-            if rawProgress >= 1.0 {
+            let p = min(elapsed / duration, 1.0)
+
+            // X：三次方扭曲时间轴 → spring
+            let u = p * p * p
+            let xFraction = CGFloat(1 - exp(-8 * u) * cos(10 * u))
+            let x = startX + (endX - startX) * xFraction
+
+            // Y：步伐摆动（3次完整波，幅度随接近终点而消减）
+            let bob = CGFloat(4.0 * (1 - p) * sin(6 * Double.pi * p))
+
+            panel.setFrameOrigin(NSPoint(x: x, y: baseY + bob))
+
+            if p >= 1.0 {
                 t.invalidate()
+                panel.setFrameOrigin(NSPoint(x: endX, y: baseY))
                 completion()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    // 弹性缓动：慢起 → 加速 → 轻微过冲约 8% → 回弹落定
-    // 模拟小人拽着重物从左走到右，到位后惯性摆动一下
-    private func springEaseOut(_ t: Double) -> Double {
-        if t <= 0 { return 0 }
-        if t >= 1 { return 1 }
-        return 1 - exp(-8 * t) * cos(10 * t)
-    }
+    // MARK: - 出场动画：被猛地拽走（t^4 加速，越来越快）
 
-    // 强 easeIn：越来越快，模拟被猛地拽走
-    private func strongEaseIn(_ t: Double) -> Double {
-        t * t * t * t
+    private func animateExit(
+        panel: NSPanel,
+        from startX: CGFloat,
+        to endX: CGFloat,
+        baseY: CGFloat
+    ) {
+        let startTime = Date()
+        let duration = 0.55
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self, weak panel] t in
+            guard let panel = panel else { t.invalidate(); return }
+            let elapsed = Date().timeIntervalSince(startTime)
+            let p = min(elapsed / duration, 1.0)
+            let eased = p * p * p * p  // t^4：前段缓，末段猛冲
+            let x = startX + (endX - startX) * CGFloat(eased)
+            panel.setFrameOrigin(NSPoint(x: x, y: baseY))
+            if p >= 1.0 {
+                t.invalidate()
+                self?.remove(panel: panel)
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
     }
 
     // MARK: - 工厂
