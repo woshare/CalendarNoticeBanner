@@ -4,7 +4,7 @@ import AppKit
 final class CalendarMonitor {
     private let eventStore = EKEventStore()
     private var timer: Timer?
-    private var firedKeys = Set<String>()
+    private var firedKeys: [String: Date] = [:]
     private let preferences: PreferencesStore
 
     var onTrigger: ((CalendarEvent, Int) -> Void)?
@@ -56,6 +56,8 @@ final class CalendarMonitor {
 
     func checkNow() {
         let now = Date()
+        // Prune keys for events that have already started
+        firedKeys = firedKeys.filter { $0.value > now }
         let lookahead = now.addingTimeInterval(90 * 60)
         let predicate = eventStore.predicateForEvents(
             withStart: now,
@@ -81,10 +83,10 @@ final class CalendarMonitor {
                 let key = Self.triggerKey(eventId: event.id, minutesBefore: minutes)
 
                 if Self.isWithinTriggerWindow(now: now, triggerTime: triggerTime),
-                   !firedKeys.contains(key) {
-                    firedKeys.insert(key)
-                    DispatchQueue.main.async {
-                        self.onTrigger?(event, minutes)
+                   firedKeys[key] == nil {
+                    firedKeys[key] = event.startDate
+                    DispatchQueue.main.async { [weak self] in
+                        self?.onTrigger?(event, minutes)
                     }
                 }
             }

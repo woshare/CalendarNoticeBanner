@@ -66,8 +66,8 @@ final class BannerWindowController {
     }
 
     private func dismiss(panel: NSPanel) {
-        let endX = panel.frame.maxX + panel.frame.width
-        animateOut(panel: panel, toX: endX)
+        let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) } ?? NSScreen.main ?? NSScreen.screens[0]
+        animateOut(panel: panel, toX: screen.frame.maxX)
     }
 
     private func remove(panel: NSPanel) {

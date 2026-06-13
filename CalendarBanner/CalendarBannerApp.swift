@@ -6,23 +6,16 @@ struct CalendarBannerApp: App {
 
     var body: some Scene {
         Settings {
-            SettingsView(preferences: AppDelegate.shared.preferences)
+            SettingsView(preferences: appDelegate.preferences)
         }
     }
 }
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    static var shared: AppDelegate!
-
     let preferences = PreferencesStore()
     private var bannerController: BannerWindowController!
     private var calendarMonitor: CalendarMonitor!
     private var menuBarController: MenuBarController!
-
-    override init() {
-        super.init()
-        AppDelegate.shared = self
-    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         bannerController = BannerWindowController(preferences: preferences)
