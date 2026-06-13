@@ -40,16 +40,16 @@ final class BannerWindowController {
                 onOpen: {
                     Self.openCalendarEvent(event)
                 },
+                onClose: { [weak panel, weak self] in
+                    guard let panel = panel else { return }
+                    self?.dismiss(panel: panel)
+                },
                 onSnooze: { [weak self] in
                     guard let self else { return }
                     let delay = Double(self.preferences.snoozeDuration * 60)
                     DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
                         self?.show(event: event, minutesBefore: minutesBefore)
                     }
-                },
-                onClose: { [weak panel, weak self] in
-                    guard let panel = panel else { return }
-                    self?.dismiss(panel: panel)
                 }
             )
         )
@@ -258,8 +258,8 @@ struct BannerWithCharacter: View {
                 minutesBefore: minutesBefore,
                 preferences: preferences,
                 onOpen: onOpen,
-                onSnooze: onSnooze,
-                onClose: onClose
+                onClose: onClose,
+                onSnooze: onSnooze
             )
             .frame(width: bannerWidth, height: bannerHeight)
             .alignmentGuide(.bottom) { d in d[.bottom] }
