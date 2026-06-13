@@ -13,11 +13,11 @@ final class BannerWindowController {
         guard let screen = screenForBanner() else { return }
 
         let width = Self.bannerWidth(forScreenWidth: screen.frame.width)
-        let height: CGFloat = 64
+        let height: CGFloat = 80
         let y = Self.bannerY(
             screenHeight: screen.frame.height,
             verticalPosition: preferences.verticalPosition
-        ) + CGFloat(panels.count) * (height + 16)
+        ) + CGFloat(panels.count) * (height + 12)
 
         let panel = makePanel(width: width, height: height)
         let hostingView = NSHostingView(rootView: BannerView(
@@ -31,49 +31,83 @@ final class BannerWindowController {
         ))
         panel.contentView = hostingView
 
-        let startX = screen.frame.minX - width
+        let startX = screen.frame.minX - width - 20
         let centerX = screen.frame.minX + (screen.frame.width - width) / 2
-        let endX = screen.frame.maxX
+        let endX = screen.frame.maxX + 20
+        let originY = screen.frame.minY + y
 
-        panel.setFrameOrigin(NSPoint(x: startX, y: screen.frame.minY + y))
+        panel.setFrameOrigin(NSPoint(x: startX, y: originY))
         panel.orderFrontRegardless()
         panels.append(panel)
 
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.6
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrameOrigin(NSPoint(x: centerX, y: screen.frame.minY + y))
-        } completionHandler: { [weak self, weak panel] in
+        // 阶段1：入场滑动（0.5秒 easeOut）
+        animateX(panel: panel, from: startX, to: centerX, y: originY, duration: 0.5, easing: easeOut) { [weak self, weak panel] in
             guard let panel = panel else { return }
             let duration = self?.preferences.bannerDuration ?? 5.0
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-                self?.animateOut(panel: panel, toX: endX)
+            DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self, weak panel] in
+                guard let panel = panel else { return }
+                // 阶段3：出场滑动（0.5秒 easeIn）
+                self?.animateX(panel: panel, from: centerX, to: endX, y: originY, duration: 0.5, easing: self?.easeIn ?? { $0 }) { [weak self, weak panel] in
+                    guard let panel = panel else { return }
+                    self?.remove(panel: panel)
+                }
             }
-        }
-    }
-
-    private func animateOut(panel: NSPanel, toX: CGFloat) {
-        var frame = panel.frame
-        frame.origin.x = toX
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.6
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().setFrameOrigin(frame.origin)
-        } completionHandler: { [weak self, weak panel] in
-            guard let panel = panel else { return }
-            self?.remove(panel: panel)
         }
     }
 
     private func dismiss(panel: NSPanel) {
         let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) } ?? NSScreen.main ?? NSScreen.screens[0]
-        animateOut(panel: panel, toX: screen.frame.maxX)
+        let endX = screen.frame.maxX + 20
+        let currentX = panel.frame.origin.x
+        let originY = panel.frame.origin.y
+        animateX(panel: panel, from: currentX, to: endX, y: originY, duration: 0.4, easing: easeIn) { [weak self, weak panel] in
+            guard let panel = panel else { return }
+            self?.remove(panel: panel)
+        }
     }
 
     private func remove(panel: NSPanel) {
         panel.orderOut(nil)
         panels.removeAll { $0 === panel }
     }
+
+    // MARK: - Timer-based animation（比 NSAnimationContext 对 NSPanel 更可靠）
+
+    private func animateX(
+        panel: NSPanel,
+        from startX: CGFloat,
+        to endX: CGFloat,
+        y: CGFloat,
+        duration: Double,
+        easing: @escaping (Double) -> Double,
+        completion: @escaping () -> Void
+    ) {
+        let startTime = Date()
+        let fps: Double = 60
+        let timer = Timer(timeInterval: 1.0 / fps, repeats: true) { [weak panel] t in
+            guard let panel = panel else { t.invalidate(); return }
+            let elapsed = Date().timeIntervalSince(startTime)
+            let rawProgress = min(elapsed / duration, 1.0)
+            let easedProgress = easing(rawProgress)
+            let x = startX + (endX - startX) * CGFloat(easedProgress)
+            panel.setFrameOrigin(NSPoint(x: x, y: y))
+            if rawProgress >= 1.0 {
+                t.invalidate()
+                completion()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    private func easeOut(_ t: Double) -> Double {
+        1 - pow(1 - t, 3)
+    }
+
+    private func easeIn(_ t: Double) -> Double {
+        t * t * t
+    }
+
+    // MARK: - 工厂
 
     private func makePanel(width: CGFloat, height: CGFloat) -> NSPanel {
         let panel = NSPanel(
@@ -94,8 +128,10 @@ final class BannerWindowController {
         NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
     }
 
+    // MARK: - 静态工具
+
     static func bannerWidth(forScreenWidth screenWidth: CGFloat) -> CGFloat {
-        min(600, max(400, screenWidth * 0.5))
+        min(680, max(440, screenWidth * 0.5))
     }
 
     static func bannerY(screenHeight: CGFloat, verticalPosition: Double) -> CGFloat {

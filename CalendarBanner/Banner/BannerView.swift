@@ -20,87 +20,99 @@ struct BannerView: View {
     var body: some View {
         ZStack {
             VisualEffectBlur()
-                .cornerRadius(12)
+                .cornerRadius(14)
 
-            HStack(spacing: 12) {
-                Circle()
+            HStack(spacing: 0) {
+                // 左侧颜色条
+                RoundedRectangle(cornerRadius: 3)
                     .fill(Color(event.calendarColor))
-                    .frame(width: 10, height: 10)
+                    .frame(width: 4, height: 48)
+                    .padding(.leading, 14)
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(event.title)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-
-                    HStack(spacing: 8) {
-                        if preferences.showLocation, let location = event.location {
-                            Text(location)
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                        if preferences.showAttendeeCount, event.attendeeCount > 0 {
-                            Text("· \(event.attendeeCount)人")
-                                .font(.system(size: 11))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                }
-
-                Spacer()
-
-                VStack(alignment: .trailing, spacing: 3) {
-                    if preferences.showTime {
-                        Text(timeString)
-                            .font(.system(size: 13, weight: .medium))
+                HStack(spacing: 14) {
+                    // 左中：会议信息
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(event.title)
+                            .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.primary)
-                    }
-                    if preferences.showCountdown {
-                        Text(countdownString)
-                            .font(.system(size: 11))
-                            .foregroundColor(.secondary)
-                    }
-                }
+                            .lineLimit(1)
 
-                if preferences.showURL, let url = event.url {
-                    Button("加入") {
-                        NSWorkspace.shared.open(url)
+                        HStack(spacing: 6) {
+                            if preferences.showLocation, let location = event.location {
+                                Label(location, systemImage: "location.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                            }
+                            if preferences.showAttendeeCount, event.attendeeCount > 0 {
+                                Label("\(event.attendeeCount)人", systemImage: "person.2.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+
+                    Spacer()
+
+                    // 右侧：时间 + 倒计时
+                    VStack(alignment: .trailing, spacing: 4) {
+                        if preferences.showTime {
+                            Text(timeString)
+                                .font(.system(size: 14, weight: .semibold).monospacedDigit())
+                                .foregroundColor(.primary)
+                        }
+                        if preferences.showCountdown {
+                            Text(countdownString)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(Color(event.calendarColor))
+                        }
+                    }
+
+                    // 加入按钮
+                    if preferences.showURL, let url = event.url {
+                        Button("加入") {
+                            NSWorkspace.shared.open(url)
+                            onClose?()
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color(event.calendarColor))
+                        .controlSize(.small)
+                    }
+
+                    // 关闭按钮
+                    Button {
                         onClose?()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
+                    .buttonStyle(.plain)
                 }
-
-                Button {
-                    onClose?()
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, 4)
+                .padding(.leading, 12)
+                .padding(.trailing, 14)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
         }
-        .frame(height: 64)
+        .frame(height: 80)
     }
 }
+
+// MARK: - NSVisualEffectView 桥接
 
 struct VisualEffectBlur: NSViewRepresentable {
     func makeNSView(context: Context) -> NSVisualEffectView {
         let view = NSVisualEffectView()
-        view.material = .hudWindow
+        view.material = .menu
         view.blendingMode = .behindWindow
         view.state = .active
         view.wantsLayer = true
-        view.layer?.cornerRadius = 12
+        view.layer?.cornerRadius = 14
         return view
     }
     func updateNSView(_ nsView: NSVisualEffectView, context: Context) {}
 }
+
+// MARK: - Preview
 
 #Preview {
     BannerView(
@@ -117,6 +129,7 @@ struct VisualEffectBlur: NSViewRepresentable {
         minutesBefore: 5,
         preferences: PreferencesStore()
     )
-    .frame(width: 500)
+    .frame(width: 560)
     .padding()
+    .background(Color.gray.opacity(0.3))
 }
