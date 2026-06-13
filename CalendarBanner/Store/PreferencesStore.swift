@@ -1,16 +1,10 @@
 import Foundation
 
 final class PreferencesStore: ObservableObject {
-    private let defaults: UserDefaults
-    private let suite: String
-
-    init(suiteName: String = "com.calendarbanner.app") {
-        self.suite = suiteName
-        self.defaults = UserDefaults(suiteName: suiteName) ?? .standard
-    }
+    private let defaults = UserDefaults.standard
 
     func reset() {
-        defaults.removePersistentDomain(forName: suite)
+        Keys.all.forEach { defaults.removeObject(forKey: $0) }
     }
 
     var reminderMinutes: [Int] {
@@ -68,6 +62,9 @@ final class PreferencesStore: ObservableObject {
         static let showLocation      = "com.calendarbanner.showLocation"
         static let showURL           = "com.calendarbanner.showURL"
         static let showAttendeeCount = "com.calendarbanner.showAttendeeCount"
+
+        static let all = [reminderMinutes, bannerDuration, verticalPosition,
+                          showTime, showCountdown, showLocation, showURL, showAttendeeCount]
     }
 }
 
