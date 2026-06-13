@@ -40,6 +40,13 @@ final class BannerWindowController {
                 onOpen: {
                     Self.openCalendarEvent(event)
                 },
+                onSnooze: { [weak self] in
+                    guard let self else { return }
+                    let delay = Double(self.preferences.snoozeDuration * 60)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                        self.show(event: event, minutesBefore: minutesBefore)
+                    }
+                },
                 onClose: { [weak panel, weak self] in
                     guard let panel = panel else { return }
                     self?.dismiss(panel: panel)
@@ -232,6 +239,7 @@ struct BannerWithCharacter: View {
     let panelHeight: CGFloat
     var onOpen: (() -> Void)?
     var onClose: (() -> Void)?
+    var onSnooze: (() -> Void)?
 
     // 用 Bool 驱动动画，避免多个 withAnimation 互相覆盖
     @State private var bobbing = false    // 上下弹跳
@@ -250,6 +258,7 @@ struct BannerWithCharacter: View {
                 minutesBefore: minutesBefore,
                 preferences: preferences,
                 onOpen: onOpen,
+                onSnooze: onSnooze,
                 onClose: onClose
             )
             .frame(width: bannerWidth, height: bannerHeight)
