@@ -175,17 +175,17 @@ struct BannerWithCharacter: View {
     var onOpen: (() -> Void)?
     var onClose: (() -> Void)?
 
-    // 小人步伐摆动动画
-    @State private var bobOffset: CGFloat = 0
-    @State private var stepPhase: Bool = false
+    // 跑步动画三个维度
+    @State private var bobY: CGFloat = 0       // 上下弹跳（步伐）
+    @State private var lean: Double = -6       // 前倾角（拽东西时身体前倾）
+    @State private var sway: CGFloat = 0       // 左右微晃（重心转移）
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            // 透明底板，尺寸 = 整个面板
             Color.clear
                 .frame(width: bannerWidth + charGap + charSize, height: panelHeight)
 
-            // 横幅本体（底部对齐）
+            // 横幅本体
             BannerView(
                 event: event,
                 minutesBefore: minutesBefore,
@@ -196,27 +196,36 @@ struct BannerWithCharacter: View {
             .frame(width: bannerWidth, height: bannerHeight)
             .alignmentGuide(.bottom) { d in d[.bottom] }
 
-            // 小人：在横幅右侧，垂直居中，持续跑步摆动
+            // 小人：三轴动画叠加 → 真实跑步感
             Text("🏃")
                 .font(.system(size: charSize * 0.8))
-                .scaleEffect(x: -1, y: 1) // 翻转朝向右方（拽着横幅跑）
+                // 水平翻转朝右（拉着横幅跑）
+                .scaleEffect(x: -1, y: 1)
+                // 身体前倾（以脚底为轴旋转，-6° ~ -14° 始终保持前倾）
+                .rotationEffect(.degrees(lean), anchor: .bottom)
                 .background(
                     Circle()
-                        .fill(Color.white.opacity(0.85))
+                        .fill(Color.white.opacity(0.88))
                         .frame(width: charSize, height: charSize)
-                        .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
+                        .shadow(color: .black.opacity(0.2), radius: 6, x: 0, y: 3)
                 )
                 .frame(width: charSize, height: charSize)
                 .offset(
-                    x: bannerWidth + charGap,
-                    y: -(bannerHeight - charSize) / 2 + bobOffset  // 垂直居中 + 步伐摆动
+                    x: bannerWidth + charGap + sway,
+                    y: -(bannerHeight - charSize) / 2 + bobY
                 )
                 .onAppear {
-                    // 用 withAnimation 循环驱动上下步伐
-                    withAnimation(
-                        .easeInOut(duration: 0.28).repeatForever(autoreverses: true)
-                    ) {
-                        bobOffset = -7
+                    // 1. 上下弹跳：0.22s，跑步节奏（快）
+                    withAnimation(.easeInOut(duration: 0.22).repeatForever(autoreverses: true)) {
+                        bobY = -9
+                    }
+                    // 2. 前倾交替：0.26s，-6°↔-14°，始终朝前倾（拽东西的发力感）
+                    withAnimation(.easeInOut(duration: 0.26).repeatForever(autoreverses: true)) {
+                        lean = -14
+                    }
+                    // 3. 左右微晃：0.32s，重心在两脚间转移
+                    withAnimation(.easeInOut(duration: 0.32).repeatForever(autoreverses: true)) {
+                        sway = 3
                     }
                 }
         }
