@@ -83,16 +83,18 @@ struct BannerView: View {
                         }
                     }
 
-                    // 加入按钮
-                    if preferences.showURL, let url = event.url {
-                        Button("加入") {
+                    // 加入按钮：始终显示，优先打开会议链接，否则打开日历详情
+                    Button("加入") {
+                        if preferences.showURL, let url = event.url {
                             NSWorkspace.shared.open(url)
-                            onClose?()
+                        } else {
+                            onOpen?()
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(Color(event.calendarColor))
-                        .controlSize(.small)
+                        onClose?()
                     }
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(event.calendarColor))
+                    .controlSize(.small)
 
                     // 关闭按钮
                     Button {
