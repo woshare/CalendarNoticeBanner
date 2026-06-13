@@ -41,4 +41,14 @@ final class PreferencesStoreTests: XCTestCase {
         let loaded = PreferencesStore(suiteName: "com.calendarbanner.tests")
         XCTAssertFalse(loaded.showTime)
     }
+
+    func test_defaultSnoozeDuration() {
+        XCTAssertEqual(store.snoozeDuration, 5)
+    }
+
+    func test_saveAndLoadSnoozeDuration() {
+        store.snoozeDuration = 10
+        let loaded = PreferencesStore(suiteName: "com.calendarbanner.tests")
+        XCTAssertEqual(loaded.snoozeDuration, 10)
+    }
 }

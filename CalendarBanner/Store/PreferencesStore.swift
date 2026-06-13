@@ -1,7 +1,15 @@
 import Foundation
 
 final class PreferencesStore: ObservableObject {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    convenience init(suiteName: String) {
+        self.init(defaults: UserDefaults(suiteName: suiteName) ?? .standard)
+    }
 
     // macOS 内置系统铃声列表
     static let alertSounds = [
@@ -75,6 +83,12 @@ final class PreferencesStore: ObservableObject {
         set { defaults.set(newValue, forKey: Keys.alertVolume); objectWillChange.send() }
     }
 
+    // Snooze 时长（分钟），默认 5，范围 1~30
+    var snoozeDuration: Int {
+        get { defaults.object(forKey: Keys.snoozeDuration) as? Int ?? 5 }
+        set { defaults.set(newValue, forKey: Keys.snoozeDuration); objectWillChange.send() }
+    }
+
     private enum Keys {
         static let reminderMinutes   = "com.meetbell.reminderMinutes"
         static let bannerDuration    = "com.meetbell.bannerDuration"
@@ -86,10 +100,11 @@ final class PreferencesStore: ObservableObject {
         static let showAttendeeCount = "com.meetbell.showAttendeeCount"
         static let alertSound        = "com.meetbell.alertSound"
         static let alertVolume       = "com.meetbell.alertVolume"
+        static let snoozeDuration    = "com.meetbell.snoozeDuration"
 
         static let all = [reminderMinutes, bannerDuration, verticalPosition,
                           showTime, showCountdown, showLocation, showURL, showAttendeeCount,
-                          alertSound, alertVolume]
+                          alertSound, alertVolume, snoozeDuration]
     }
 }
 
