@@ -43,8 +43,8 @@ final class BannerWindowController {
                 onSnooze: { [weak self] in
                     guard let self else { return }
                     let delay = Double(self.preferences.snoozeDuration * 60)
-                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                        self.show(event: event, minutesBefore: minutesBefore)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                        self?.show(event: event, minutesBefore: minutesBefore)
                     }
                 },
                 onClose: { [weak panel, weak self] in
