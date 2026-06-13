@@ -10,7 +10,8 @@ final class BannerWindowController {
     }
 
     func show(event: CalendarEvent, minutesBefore: Int) {
-        guard let screen = screenForBanner() else { return }
+        print("[CalendarBanner] show() called: \(event.title), minutesBefore=\(minutesBefore)")
+        guard let screen = screenForBanner() else { print("[CalendarBanner] show() aborted: no screen"); return }
 
         let width = Self.bannerWidth(forScreenWidth: screen.frame.width)
         let height: CGFloat = 80

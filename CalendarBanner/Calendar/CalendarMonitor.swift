@@ -56,17 +56,26 @@ final class CalendarMonitor {
 
     /// 在前后一天范围内，找距当前时间最近且尚未结束的事件并立即弹框
     func forceCheckNow() {
+        eventStore.refreshSourcesIfNecessary()
         let now = Date()
         let past = now.addingTimeInterval(-24 * 60 * 60)
         let lookahead = now.addingTimeInterval(24 * 60 * 60)
         let predicate = eventStore.predicateForEvents(withStart: past, end: lookahead, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
 
-        // 只保留尚未结束的事件，再取 startDate 离现在最近的
-        guard let ekEvent = ekEvents
-            .filter({ $0.endDate > now })
-            .min(by: { abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now)) })
-        else { return }
+        print("[CalendarBanner] forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
+
+        let eligible = ekEvents.filter({ $0.endDate > now })
+        print("[CalendarBanner] forceCheckNow: 其中未结束 \(eligible.count) 个")
+
+        guard let ekEvent = eligible.min(by: {
+            abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
+        }) else {
+            print("[CalendarBanner] forceCheckNow: 没有找到未结束的事件，不弹框")
+            return
+        }
+
+        print("[CalendarBanner] forceCheckNow: 选中事件「\(ekEvent.title ?? "")」startDate=\(ekEvent.startDate) endDate=\(ekEvent.endDate)")
 
         let event = CalendarEvent(
             id: ekEvent.eventIdentifier,
@@ -79,8 +88,8 @@ final class CalendarMonitor {
             calendarColor: NSColor(cgColor: ekEvent.calendar.cgColor) ?? .systemBlue
         )
 
-        // 负数 = 已经过了多少分钟前开始；0 = 正在开始；正数 = 还有多少分钟
         let minutesBefore = Int(ekEvent.startDate.timeIntervalSince(now) / 60)
+        print("[CalendarBanner] forceCheckNow: 准备弹框，minutesBefore=\(minutesBefore)")
         DispatchQueue.main.async { [weak self] in
             self?.onTrigger?(event, minutesBefore)
         }
