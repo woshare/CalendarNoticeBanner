@@ -1,5 +1,6 @@
 import SwiftUI
 import ServiceManagement
+import AppKit
 
 struct SettingsView: View {
     @ObservedObject var preferences: PreferencesStore
@@ -39,10 +40,10 @@ struct SettingsView: View {
                 HStack {
                     Text("自动消失时长")
                     Spacer()
-                    Slider(value: $preferences.bannerDuration, in: 3...30, step: 1)
+                    Slider(value: $preferences.bannerDuration, in: 60...600, step: 60)
                         .frame(width: 150)
-                    Text("\(Int(preferences.bannerDuration))秒")
-                        .frame(width: 40)
+                    Text("\(Int(preferences.bannerDuration / 60)) 分钟")
+                        .frame(width: 50)
                 }
 
                 HStack {
@@ -61,6 +62,34 @@ struct SettingsView: View {
                 Toggle("会议地点", isOn: $preferences.showLocation)
                 Toggle("会议链接", isOn: $preferences.showURL)
                 Toggle("参与人数", isOn: $preferences.showAttendeeCount)
+            }
+
+            Section("提醒音效") {
+                HStack {
+                    Picker("铃声", selection: $preferences.alertSound) {
+                        ForEach(PreferencesStore.alertSounds, id: \.self) { name in
+                            Text(name).tag(name)
+                        }
+                    }
+                    Button("试听") {
+                        let vol = preferences.alertVolume > 0 ? preferences.alertVolume : 0.8
+                        if let sound = NSSound(named: NSSound.Name(preferences.alertSound)) {
+                            sound.volume = Float(vol)
+                            sound.play()
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                HStack {
+                    Text("音量")
+                    Spacer()
+                    Slider(value: $preferences.alertVolume, in: 0...1, step: 0.1)
+                        .frame(width: 150)
+                    Text(preferences.alertVolume == 0 ? "关闭" : "\(Int(preferences.alertVolume * 100))%")
+                        .foregroundColor(preferences.alertVolume == 0 ? .secondary : .primary)
+                        .frame(width: 40)
+                }
             }
 
             Section("启动") {

@@ -63,21 +63,21 @@ final class CalendarMonitor {
         let predicate = eventStore.predicateForEvents(withStart: past, end: lookahead, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
 
-        print("[CalendarBanner] forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
+        print("[MeetBell] forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
 
         let notEnded = ekEvents.filter({ $0.endDate > now })
-        print("[CalendarBanner] forceCheckNow: 其中未结束 \(notEnded.count) 个")
+        print("[MeetBell] forceCheckNow: 其中未结束 \(notEnded.count) 个")
 
         // 优先取未结束的最近事件；没有则兜底取整体最近事件
         let candidates = notEnded.isEmpty ? ekEvents : notEnded
         guard let ekEvent = candidates.min(by: {
             abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
         }) else {
-            print("[CalendarBanner] forceCheckNow: ±24h 内没有任何事件，不弹框")
+            print("[MeetBell] forceCheckNow: ±24h 内没有任何事件，不弹框")
             return
         }
 
-        print("[CalendarBanner] forceCheckNow: 选中事件「\(ekEvent.title ?? "")」startDate=\(ekEvent.startDate) endDate=\(ekEvent.endDate)")
+        print("[MeetBell] forceCheckNow: 选中事件「\(ekEvent.title ?? "")」startDate=\(ekEvent.startDate) endDate=\(ekEvent.endDate)")
 
         let event = CalendarEvent(
             id: ekEvent.eventIdentifier,
@@ -91,7 +91,7 @@ final class CalendarMonitor {
         )
 
         let minutesBefore = Int(ekEvent.startDate.timeIntervalSince(now) / 60)
-        print("[CalendarBanner] forceCheckNow: 准备弹框，minutesBefore=\(minutesBefore)")
+        print("[MeetBell] forceCheckNow: 准备弹框，minutesBefore=\(minutesBefore)")
         DispatchQueue.main.async { [weak self] in
             self?.onTrigger?(event, minutesBefore)
         }
@@ -123,7 +123,8 @@ final class CalendarMonitor {
 
             for minutes in preferences.reminderMinutes {
                 let triggerTime = event.startDate.addingTimeInterval(Double(-minutes) * 60)
-                let key = Self.triggerKey(eventId: event.id, minutesBefore: minutes)
+                // key 含 startDate：事件改时间后 startDate 变化，key 随之变化，允许重新触发
+                let key = Self.triggerKey(eventId: event.id, minutesBefore: minutes, startDate: event.startDate)
 
                 if Self.isWithinTriggerWindow(now: now, triggerTime: triggerTime),
                    firedKeys[key] == nil {
@@ -140,7 +141,7 @@ final class CalendarMonitor {
         abs(now.timeIntervalSince(triggerTime)) <= 30
     }
 
-    static func triggerKey(eventId: String, minutesBefore: Int) -> String {
-        "\(eventId)__\(minutesBefore)min"
+    static func triggerKey(eventId: String, minutesBefore: Int, startDate: Date) -> String {
+        "\(eventId)__\(minutesBefore)min@\(Int(startDate.timeIntervalSinceReferenceDate))"
     }
 }

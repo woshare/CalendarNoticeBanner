@@ -1,5 +1,5 @@
 import XCTest
-@testable import CalendarBanner
+@testable import MeetBell
 
 final class CalendarMonitorTests: XCTestCase {
 
@@ -44,10 +44,19 @@ final class CalendarMonitorTests: XCTestCase {
     }
 
     func test_triggerKey_isUniquePerEventAndMinute() {
-        let key1 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 5)
-        let key2 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 15)
-        let key3 = CalendarMonitor.triggerKey(eventId: "evt-2", minutesBefore: 5)
+        let date = Date()
+        let key1 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 5,  startDate: date)
+        let key2 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 15, startDate: date)
+        let key3 = CalendarMonitor.triggerKey(eventId: "evt-2", minutesBefore: 5,  startDate: date)
         XCTAssertNotEqual(key1, key2)
         XCTAssertNotEqual(key1, key3)
+    }
+
+    func test_triggerKey_differsWhenStartDateChanges() {
+        let date1 = Date()
+        let date2 = date1.addingTimeInterval(600) // 改了10分钟
+        let key1 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 5, startDate: date1)
+        let key2 = CalendarMonitor.triggerKey(eventId: "evt-1", minutesBefore: 5, startDate: date2)
+        XCTAssertNotEqual(key1, key2)
     }
 }

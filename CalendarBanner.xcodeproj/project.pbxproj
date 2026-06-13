@@ -24,10 +24,10 @@
 
 /* Begin PBXFileReference section */
 		AA000001000000000000001B /* CalendarBannerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerApp.swift; sourceTree = "<group>"; };
-		AA00000100000000000000F0 /* CalendarBanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CalendarBanner.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000100000000000000F0 /* CalendarBanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetBell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000100000000000000F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA000001000000000000002B /* CalendarBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerTests.swift; sourceTree = "<group>"; };
-		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalendarBannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetBellTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000002000000000000001B /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
 		AA000002000000000000002B /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
 		AA000002000000000000003B /* CalendarMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonitor.swift; sourceTree = "<group>"; };
@@ -168,8 +168,8 @@
 			);
 			dependencies = (
 			);
-			name = CalendarBanner;
-			productName = CalendarBanner;
+			name = MeetBell;
+			productName = MeetBell;
 			productReference = AA00000100000000000000F0 /* CalendarBanner.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -185,8 +185,8 @@
 			dependencies = (
 				AA00000100000000000000D2 /* PBXTargetDependency */,
 			);
-			name = CalendarBannerTests;
-			productName = CalendarBannerTests;
+			name = MeetBellTests;
+			productName = MeetBellTests;
 			productReference = AA00000100000000000000F2 /* CalendarBannerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
@@ -282,7 +282,7 @@
 			containerPortal = AA00000100000000000000P0 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = AA00000100000000000000D0;
-			remoteInfo = CalendarBanner;
+			remoteInfo = MeetBell;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -413,12 +413,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.calendarbanner.app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.9;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalendarBanner.app/Contents/MacOS/CalendarBanner";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MeetBell.app/Contents/MacOS/MeetBell";
 			};
 			name = Debug;
 		};
@@ -431,12 +431,12 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.calendarbanner.app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.9;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/CalendarBanner.app/Contents/MacOS/CalendarBanner";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MeetBell.app/Contents/MacOS/MeetBell";
 			};
 			name = Release;
 		};
@@ -454,7 +454,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.calendarbanner.app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -476,7 +476,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.calendarbanner.app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;

@@ -1,5 +1,5 @@
 import XCTest
-@testable import CalendarBanner
+@testable import MeetBell
 
 final class PreferencesStoreTests: XCTestCase {
     var store: PreferencesStore!

@@ -15,7 +15,9 @@ struct BannerView: View {
     }
 
     private var countdownString: String {
-        if minutesBefore < 0 {
+        if event.endDate < Date() {
+            return "已结束"
+        } else if minutesBefore < 0 {
             return "已开始 \(-minutesBefore) 分钟"
         } else if minutesBefore == 0 {
             return "正在开始"

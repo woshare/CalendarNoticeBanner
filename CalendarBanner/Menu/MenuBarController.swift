@@ -17,7 +17,7 @@ final class MenuBarController {
     private func setup() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         statusItem.button?.image = NSImage(systemSymbolName: "calendar.badge.clock",
-                                           accessibilityDescription: "CalendarBanner")
+                                           accessibilityDescription: "MeetBell")
         statusItem.menu = buildMenu()
     }
 
@@ -46,7 +46,7 @@ final class MenuBarController {
         menu.addItem(.separator())
 
         menu.addItem(NSMenuItem(
-            title: "退出 CalendarBanner",
+            title: "退出 MeetBell",
             action: #selector(NSApplication.terminate(_:)),
             keyEquivalent: "q"
         ))
@@ -89,7 +89,7 @@ final class MenuBarController {
             let view = SettingsView(preferences: preferences)
             let hosting = NSHostingController(rootView: view)
             let window = NSWindow(contentViewController: hosting)
-            window.title = "CalendarBanner 偏好设置"
+            window.title = "MeetBell 偏好设置"
             window.styleMask = [.titled, .closable]
             window.center()
             settingsWindow = window
