@@ -7,6 +7,10 @@ struct BannerView: View {
     let preferences: PreferencesStore
     var onOpen: (() -> Void)?
     var onClose: (() -> Void)?
+    var onSnooze: (() -> Void)?
+
+    @State private var now: Date = Date()
+    private let ticker = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var timeString: String {
         let f = DateFormatter()
@@ -15,17 +19,19 @@ struct BannerView: View {
     }
 
     private var countdownString: String {
-        if event.endDate < Date() {
-            return "已结束"
-        } else if minutesBefore < 0 {
-            return "已开始 \(-minutesBefore) 分钟"
-        } else if minutesBefore == 0 {
-            return "正在开始"
-        } else if minutesBefore == 1 {
-            return "1 分钟后"
-        } else {
-            return "\(minutesBefore) 分钟后"
+        let toStart = event.startDate.timeIntervalSince(now)
+        let toEnd   = event.endDate.timeIntervalSince(now)
+        if toEnd <= 0 { return "已结束" }
+        if toStart <= 0 {
+            let elapsed = Int(-toStart)
+            return "已开始 \(elapsed / 60)m \(elapsed % 60)s"
         }
+        if toStart > 5 * 60 {
+            return "\(Int(toStart / 60)) 分钟后"
+        }
+        let m = Int(toStart) / 60
+        let s = Int(toStart) % 60
+        return "\(m)分\(String(format: "%02d", s))秒"
     }
 
     var body: some View {
@@ -94,6 +100,18 @@ struct BannerView: View {
                     .tint(Color(event.calendarColor))
                     .controlSize(.small)
 
+                    // Snooze 按钮
+                    Button {
+                        onSnooze?()
+                        onClose?()
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .help("稍后提醒")
+
                     // 关闭按钮
                     Button {
                         onClose?()
@@ -108,6 +126,7 @@ struct BannerView: View {
                 .padding(.trailing, 14)
             }
         }
+        .onReceive(ticker) { now = $0 }
         .frame(height: 80)
     }
 }
