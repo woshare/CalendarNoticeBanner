@@ -54,6 +54,32 @@ final class CalendarMonitor {
         checkNow()
     }
 
+    /// 找到最近的一个即将开始的事件并立即弹框，用于手动触发测试
+    func forceCheckNow() {
+        let now = Date()
+        let lookahead = now.addingTimeInterval(24 * 60 * 60)
+        let predicate = eventStore.predicateForEvents(withStart: now, end: lookahead, calendars: nil)
+        let ekEvents = eventStore.events(matching: predicate)
+
+        guard let ekEvent = ekEvents.min(by: { $0.startDate < $1.startDate }) else { return }
+
+        let event = CalendarEvent(
+            id: ekEvent.eventIdentifier,
+            title: ekEvent.title.isEmpty ? "无标题会议" : ekEvent.title,
+            startDate: ekEvent.startDate,
+            endDate: ekEvent.endDate,
+            location: ekEvent.location,
+            url: ekEvent.url,
+            attendeeCount: ekEvent.attendees?.count ?? 0,
+            calendarColor: NSColor(cgColor: ekEvent.calendar.cgColor) ?? .systemBlue
+        )
+
+        let minutesBefore = max(1, Int(ekEvent.startDate.timeIntervalSince(now) / 60))
+        DispatchQueue.main.async { [weak self] in
+            self?.onTrigger?(event, minutesBefore)
+        }
+    }
+
     func checkNow() {
         let now = Date()
         // Prune keys for events that have already started
