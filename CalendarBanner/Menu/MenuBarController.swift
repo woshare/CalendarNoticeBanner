@@ -6,6 +6,7 @@ final class MenuBarController {
     private let preferences: PreferencesStore
     private let bannerController: BannerWindowController
     private var settingsWindow: NSWindow?
+    var onForceCheck: (() -> Void)?
 
     init(preferences: PreferencesStore, bannerController: BannerWindowController) {
         self.preferences = preferences
@@ -37,6 +38,10 @@ final class MenuBarController {
         let previewItem = NSMenuItem(title: "测试横幅预览", action: #selector(showTestBanner), keyEquivalent: "t")
         previewItem.target = self
         menu.addItem(previewItem)
+
+        let forceCheckItem = NSMenuItem(title: "立即检查日历", action: #selector(forceCheckNow), keyEquivalent: "r")
+        forceCheckItem.target = self
+        menu.addItem(forceCheckItem)
 
         menu.addItem(.separator())
 
@@ -98,6 +103,10 @@ final class MenuBarController {
         }
         settingsWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func forceCheckNow() {
+        onForceCheck?()
     }
 
     @objc private func showTestBanner() {

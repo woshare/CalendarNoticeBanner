@@ -33,6 +33,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.menuBarController.showPermissionWarning()
         }
 
+        menuBarController.onForceCheck = { [weak self] in
+            self?.calendarMonitor.forceCheckNow()
+        }
+
         calendarMonitor.start()
     }
 
