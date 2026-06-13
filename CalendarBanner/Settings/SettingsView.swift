@@ -54,6 +54,12 @@ struct SettingsView: View {
                     Text("\(Int(preferences.verticalPosition * 100))%")
                         .frame(width: 40)
                 }
+
+                Stepper(
+                    "Snooze 时长：\(preferences.snoozeDuration) 分钟",
+                    value: $preferences.snoozeDuration,
+                    in: 1...30
+                )
             }
 
             Section("显示内容") {
@@ -110,7 +116,7 @@ struct SettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 560)
+        .frame(width: 420, height: 600)
     }
 }
 
