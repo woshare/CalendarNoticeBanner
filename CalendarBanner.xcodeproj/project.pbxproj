@@ -9,6 +9,15 @@
 /* Begin PBXBuildFile section */
 		AA000001000000000000001A /* CalendarBannerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000001B /* CalendarBannerApp.swift */; };
 		AA000001000000000000002A /* CalendarBannerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000001000000000000002B /* CalendarBannerTests.swift */; };
+		AA000002000000000000001A /* CalendarEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000001B /* CalendarEvent.swift */; };
+		AA000002000000000000002A /* PreferencesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000002B /* PreferencesStore.swift */; };
+		AA000002000000000000003A /* CalendarMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000003B /* CalendarMonitor.swift */; };
+		AA000002000000000000004A /* BannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000004B /* BannerView.swift */; };
+		AA000002000000000000005A /* BannerWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000005B /* BannerWindowController.swift */; };
+		AA000002000000000000006A /* CalendarEventTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000006B /* CalendarEventTests.swift */; };
+		AA000002000000000000007A /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000007B /* PreferencesStoreTests.swift */; };
+		AA000002000000000000008A /* CalendarMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* CalendarMonitorTests.swift */; };
+		AA000002000000000000009A /* BannerWindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000009B /* BannerWindowControllerTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -17,6 +26,15 @@
 		AA00000100000000000000F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA000001000000000000002B /* CalendarBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerTests.swift; sourceTree = "<group>"; };
 		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CalendarBannerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA000002000000000000001B /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
+		AA000002000000000000002B /* PreferencesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStore.swift; sourceTree = "<group>"; };
+		AA000002000000000000003B /* CalendarMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonitor.swift; sourceTree = "<group>"; };
+		AA000002000000000000004B /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
+		AA000002000000000000005B /* BannerWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerWindowController.swift; sourceTree = "<group>"; };
+		AA000002000000000000006B /* CalendarEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEventTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000007B /* PreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStoreTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000008B /* CalendarMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonitorTests.swift; sourceTree = "<group>"; };
+		AA000002000000000000009B /* BannerWindowControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerWindowControllerTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -42,6 +60,10 @@
 			children = (
 				AA000001000000000000001B /* CalendarBannerApp.swift */,
 				AA00000100000000000000F1 /* Info.plist */,
+				AA000002000000000000010A /* Models */,
+				AA000002000000000000010B /* Store */,
+				AA000002000000000000010C /* Calendar */,
+				AA000002000000000000010D /* Banner */,
 			);
 			path = CalendarBanner;
 			sourceTree = "<group>";
@@ -50,6 +72,10 @@
 			isa = PBXGroup;
 			children = (
 				AA000001000000000000002B /* CalendarBannerTests.swift */,
+				AA000002000000000000006B /* CalendarEventTests.swift */,
+				AA000002000000000000007B /* PreferencesStoreTests.swift */,
+				AA000002000000000000008B /* CalendarMonitorTests.swift */,
+				AA000002000000000000009B /* BannerWindowControllerTests.swift */,
 			);
 			path = CalendarBannerTests;
 			sourceTree = "<group>";
@@ -70,6 +96,39 @@
 				AA00000100000000000000C1 /* CalendarBannerTests */,
 				AA00000100000000000000C2 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		AA000002000000000000010A /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000001B /* CalendarEvent.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		AA000002000000000000010B /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000002B /* PreferencesStore.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		AA000002000000000000010C /* Calendar */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000003B /* CalendarMonitor.swift */,
+			);
+			path = Calendar;
+			sourceTree = "<group>";
+		};
+		AA000002000000000000010D /* Banner */ = {
+			isa = PBXGroup;
+			children = (
+				AA000002000000000000004B /* BannerView.swift */,
+				AA000002000000000000005B /* BannerWindowController.swift */,
+			);
+			path = Banner;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -163,6 +222,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000001A /* CalendarBannerApp.swift in Sources */,
+				AA000002000000000000001A /* CalendarEvent.swift in Sources */,
+				AA000002000000000000002A /* PreferencesStore.swift in Sources */,
+				AA000002000000000000003A /* CalendarMonitor.swift in Sources */,
+				AA000002000000000000004A /* BannerView.swift in Sources */,
+				AA000002000000000000005A /* BannerWindowController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,6 +235,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA000001000000000000002A /* CalendarBannerTests.swift in Sources */,
+				AA000002000000000000006A /* CalendarEventTests.swift in Sources */,
+				AA000002000000000000007A /* PreferencesStoreTests.swift in Sources */,
+				AA000002000000000000008A /* CalendarMonitorTests.swift in Sources */,
+				AA000002000000000000009A /* BannerWindowControllerTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
