@@ -11,54 +11,64 @@ final class BannerWindowController {
 
     func show(event: CalendarEvent, minutesBefore: Int) {
         print("[CalendarBanner] show() called: \(event.title), minutesBefore=\(minutesBefore)")
-        guard let screen = screenForBanner() else { print("[CalendarBanner] show() aborted: no screen"); return }
+        guard let screen = screenForBanner() else { return }
 
-        let width = Self.bannerWidth(forScreenWidth: screen.frame.width)
-        let height: CGFloat = 80
+        let bannerW: CGFloat = Self.bannerWidth(forScreenWidth: screen.frame.width)
+        let bannerH: CGFloat = 80
+        let charSize: CGFloat = 56          // 小人尺寸
+        let charGap: CGFloat  = 6           // 小人与横幅的间距
+        // 整体面板宽度 = 横幅 + 间距 + 小人（小人从横幅右侧探出）
+        let totalW = bannerW + charGap + charSize
+
         let y = Self.bannerY(
             screenHeight: screen.frame.height,
             verticalPosition: preferences.verticalPosition
-        ) + CGFloat(panels.count) * (height + 12)
+        ) + CGFloat(panels.count) * (bannerH + 12)
 
-        let panel = makePanel(width: width, height: height)
-        let hostingView = NSHostingView(rootView: BannerView(
-            event: event,
-            minutesBefore: minutesBefore,
-            preferences: preferences,
-            onOpen: {
-                let interval = event.startDate.timeIntervalSinceReferenceDate
-                if let url = URL(string: "calshow:\(Int(interval))") {
-                    NSWorkspace.shared.open(url)
+        // 用一个稍高的面板容纳小人（小人可以上下摆动超出横幅区域）
+        let panelH = bannerH + charSize * 0.4
+        let panel = makePanel(width: totalW, height: panelH)
+
+        let hostingView = NSHostingView(rootView:
+            BannerWithCharacter(
+                event: event,
+                minutesBefore: minutesBefore,
+                preferences: preferences,
+                bannerWidth: bannerW,
+                bannerHeight: bannerH,
+                charSize: charSize,
+                charGap: charGap,
+                panelHeight: panelH,
+                onOpen: {
+                    let interval = event.startDate.timeIntervalSinceReferenceDate
+                    if let url = URL(string: "calshow:\(Int(interval))") {
+                        NSWorkspace.shared.open(url)
+                    }
+                },
+                onClose: { [weak panel, weak self] in
+                    guard let panel = panel else { return }
+                    self?.dismiss(panel: panel)
                 }
-            },
-            onClose: { [weak panel, weak self] in
-                guard let panel = panel else { return }
-                self?.dismiss(panel: panel)
-            }
-        ))
+            )
+        )
+        // 允许 SwiftUI 内容溢出 panel 边界（小人摆动时）
+        hostingView.layer?.masksToBounds = false
         panel.contentView = hostingView
 
-        let startX = screen.frame.minX - width - 20
-        let centerX = screen.frame.minX + (screen.frame.width - width) / 2
-        let endX = screen.frame.maxX + 20
-        let originY = screen.frame.minY + y
+        let startX  = screen.frame.minX - totalW - 20
+        let centerX = screen.frame.minX + (screen.frame.width - bannerW) / 2 - charGap - charSize
+        let endX    = screen.frame.maxX + 20
+        // Y 让横幅居中于面板
+        let originY = screen.frame.minY + y - (panelH - bannerH) / 2
 
         panel.setFrameOrigin(NSPoint(x: startX, y: originY))
         panel.orderFrontRegardless()
         panels.append(panel)
 
-        animateEntry(
-            panel: panel,
-            bannerWidth: width,
-            bannerHeight: height,
-            from: startX,
-            to: centerX,
-            baseY: originY,
-            duration: 2.0
-        ) { [weak self, weak panel] in
+        animateEntry(panel: panel, from: startX, to: centerX, baseY: originY, duration: 2.2) { [weak self, weak panel] in
             guard let panel = panel else { return }
-            let holdDuration = self?.preferences.bannerDuration ?? 5.0
-            DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration) { [weak self, weak panel] in
+            let hold = self?.preferences.bannerDuration ?? 5.0
+            DispatchQueue.main.asyncAfter(deadline: .now() + hold) { [weak self, weak panel] in
                 guard let panel = panel else { return }
                 self?.animateExit(panel: panel, from: centerX, to: endX, baseY: originY)
             }
@@ -66,7 +76,8 @@ final class BannerWindowController {
     }
 
     private func dismiss(panel: NSPanel) {
-        let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) } ?? NSScreen.main ?? NSScreen.screens[0]
+        let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) }
+            ?? NSScreen.main ?? NSScreen.screens[0]
         let endX = screen.frame.maxX + 20
         animateExit(panel: panel, from: panel.frame.origin.x, to: endX, baseY: panel.frame.origin.y)
     }
@@ -76,109 +87,46 @@ final class BannerWindowController {
         panels.removeAll { $0 === panel }
     }
 
-    // MARK: - 入场：小人拉着横幅从左侧走入
-    //
-    // 小人面朝右跑动，紧贴横幅右边缘（前方引导），步伐幅度比横幅大。
-    // 横幅抵达终点前小人渐隐离开。
-    // X：三次方时间扭曲 + spring 过冲，模拟"费力拽起重物"手感。
+    // MARK: - 入场：慢起→加速→轻微过冲→落定（cubic warp + spring）
 
     private func animateEntry(
         panel: NSPanel,
-        bannerWidth: CGFloat,
-        bannerHeight: CGFloat,
         from startX: CGFloat,
         to endX: CGFloat,
         baseY: CGFloat,
         duration: Double,
         completion: @escaping () -> Void
     ) {
-        let charSize: CGFloat = 44
-        let charPanel = makeCharacterPanel(size: charSize)
-        charPanel.orderFrontRegardless()
-
         let startTime = Date()
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak panel] t in
-            guard let panel = panel else {
-                t.invalidate()
-                charPanel.orderOut(nil)
-                return
-            }
-            let elapsed = Date().timeIntervalSince(startTime)
-            let p = min(elapsed / duration, 1.0)
+            guard let panel = panel else { t.invalidate(); return }
+            let p = min(Date().timeIntervalSince(startTime) / duration, 1.0)
 
-            // X：三次方扭曲 → spring（前段极慢，中段冲刺，末段过冲回弹）
+            // 三次方扭曲 → spring：前段极慢，中段冲刺，末段过冲~8%后落定
             let u = p * p * p
-            let xFraction = CGFloat(1 - exp(-8 * u) * cos(10 * u))
-            let bannerX = startX + (endX - startX) * xFraction
-
-            // 横幅：微幅垂直晃动（2.5pt，模拟被拽动时的晃荡）
-            let bannerBob = CGFloat(2.5 * (1 - p) * sin(6 * Double.pi * p))
-            panel.setFrameOrigin(NSPoint(x: bannerX, y: baseY + bannerBob))
-
-            // 小人：紧贴横幅右边 4pt，步伐幅度更大（7pt），相位偏移 0.6 rad
-            let charX = bannerX + bannerWidth + 4
-            let charBob = CGFloat(7.0 * (1 - p) * sin(6 * Double.pi * p + 0.6))
-            let charY = baseY + bannerBob + charBob + (bannerHeight - charSize) / 2.0
-            charPanel.setFrameOrigin(NSPoint(x: charX, y: charY))
-
-            // 最后 25% 小人渐隐（横幅已接近终点，小人"放手"离开）
-            let charAlpha = p < 0.75 ? 1.0 : (1.0 - p) / 0.25
-            charPanel.alphaValue = CGFloat(max(0, charAlpha))
+            let x = startX + (endX - startX) * CGFloat(1 - exp(-8 * u) * cos(10 * u))
+            // 整体面板上下微幅晃动（2pt），模拟被拽动时的惯性
+            let bob = CGFloat(2.0 * (1 - p) * sin(6 * Double.pi * p))
+            panel.setFrameOrigin(NSPoint(x: x, y: baseY + bob))
 
             if p >= 1.0 {
                 t.invalidate()
                 panel.setFrameOrigin(NSPoint(x: endX, y: baseY))
-                charPanel.orderOut(nil)
                 completion()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    // 小人使用 figure.run SF Symbol，独立透明小窗口
-    private func makeCharacterPanel(size: CGFloat) -> NSPanel {
-        let panel = NSPanel(
-            contentRect: NSRect(x: -400, y: 0, width: size, height: size),
-            styleMask: [.borderless, .nonactivatingPanel],
-            backing: .buffered,
-            defer: false
-        )
-        panel.level = .floating
-        panel.isOpaque = false
-        panel.backgroundColor = .clear
-        panel.hasShadow = false
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+    // MARK: - 出场：t^4 越来越快，像被猛地拽走
 
-        let view = NSHostingView(rootView:
-            Image(systemName: "figure.run")
-                .font(.system(size: size * 0.78, weight: .medium))
-                .foregroundStyle(.primary)
-                .frame(width: size, height: size)
-        )
-        panel.contentView = view
-        return panel
-    }
-
-    // MARK: - 出场：被猛地拽走（t^4 加速）
-
-    private func animateExit(
-        panel: NSPanel,
-        from startX: CGFloat,
-        to endX: CGFloat,
-        baseY: CGFloat
-    ) {
+    private func animateExit(panel: NSPanel, from startX: CGFloat, to endX: CGFloat, baseY: CGFloat) {
         let startTime = Date()
-        let duration = 0.55
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self, weak panel] t in
             guard let panel = panel else { t.invalidate(); return }
-            let elapsed = Date().timeIntervalSince(startTime)
-            let p = min(elapsed / duration, 1.0)
-            let x = startX + (endX - startX) * CGFloat(p * p * p * p)
-            panel.setFrameOrigin(NSPoint(x: x, y: baseY))
-            if p >= 1.0 {
-                t.invalidate()
-                self?.remove(panel: panel)
-            }
+            let p = min(Date().timeIntervalSince(startTime) / 0.55, 1.0)
+            panel.setFrameOrigin(NSPoint(x: startX + (endX - startX) * CGFloat(p * p * p * p), y: baseY))
+            if p >= 1.0 { t.invalidate(); self?.remove(panel: panel) }
         }
         RunLoop.main.add(timer, forMode: .common)
     }
@@ -195,7 +143,7 @@ final class BannerWindowController {
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
-        panel.hasShadow = true
+        panel.hasShadow = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         return panel
     }
@@ -204,17 +152,73 @@ final class BannerWindowController {
         NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
     }
 
-    // MARK: - 静态工具
-
-    static func bannerWidth(forScreenWidth screenWidth: CGFloat) -> CGFloat {
-        min(680, max(440, screenWidth * 0.5))
-    }
-
+    static func bannerWidth(forScreenWidth w: CGFloat) -> CGFloat { min(680, max(440, w * 0.5)) }
     static func bannerY(screenHeight: CGFloat, verticalPosition: Double) -> CGFloat {
         screenHeight * CGFloat(verticalPosition)
     }
-
     static func verticalOffsets(forCount count: Int, bannerHeight: CGFloat, spacing: CGFloat) -> [CGFloat] {
         (0..<count).map { CGFloat($0) * (bannerHeight + spacing) }
+    }
+}
+
+// MARK: - 横幅 + 小人 合体视图
+
+struct BannerWithCharacter: View {
+    let event: CalendarEvent
+    let minutesBefore: Int
+    let preferences: PreferencesStore
+    let bannerWidth: CGFloat
+    let bannerHeight: CGFloat
+    let charSize: CGFloat
+    let charGap: CGFloat
+    let panelHeight: CGFloat
+    var onOpen: (() -> Void)?
+    var onClose: (() -> Void)?
+
+    // 小人步伐摆动动画
+    @State private var bobOffset: CGFloat = 0
+    @State private var stepPhase: Bool = false
+
+    var body: some View {
+        ZStack(alignment: .bottomLeading) {
+            // 透明底板，尺寸 = 整个面板
+            Color.clear
+                .frame(width: bannerWidth + charGap + charSize, height: panelHeight)
+
+            // 横幅本体（底部对齐）
+            BannerView(
+                event: event,
+                minutesBefore: minutesBefore,
+                preferences: preferences,
+                onOpen: onOpen,
+                onClose: onClose
+            )
+            .frame(width: bannerWidth, height: bannerHeight)
+            .alignmentGuide(.bottom) { d in d[.bottom] }
+
+            // 小人：在横幅右侧，垂直居中，持续跑步摆动
+            Text("🏃")
+                .font(.system(size: charSize * 0.8))
+                .scaleEffect(x: -1, y: 1) // 翻转朝向右方（拽着横幅跑）
+                .background(
+                    Circle()
+                        .fill(Color.white.opacity(0.85))
+                        .frame(width: charSize, height: charSize)
+                        .shadow(color: .black.opacity(0.18), radius: 6, x: 0, y: 3)
+                )
+                .frame(width: charSize, height: charSize)
+                .offset(
+                    x: bannerWidth + charGap,
+                    y: -(bannerHeight - charSize) / 2 + bobOffset  // 垂直居中 + 步伐摆动
+                )
+                .onAppear {
+                    // 用 withAnimation 循环驱动上下步伐
+                    withAnimation(
+                        .easeInOut(duration: 0.28).repeatForever(autoreverses: true)
+                    ) {
+                        bobOffset = -7
+                    }
+                }
+        }
     }
 }
