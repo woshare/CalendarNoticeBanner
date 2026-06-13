@@ -18,6 +18,7 @@
 		AA000002000000000000007A /* PreferencesStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000007B /* PreferencesStoreTests.swift */; };
 		AA000002000000000000008A /* CalendarMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* CalendarMonitorTests.swift */; };
 		AA000002000000000000009A /* BannerWindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000009B /* BannerWindowControllerTests.swift */; };
+		AA000003000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003000000000000001B /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,6 +36,7 @@
 		AA000002000000000000007B /* PreferencesStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferencesStoreTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000008B /* CalendarMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonitorTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000009B /* BannerWindowControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerWindowControllerTests.swift; sourceTree = "<group>"; };
+		AA000003000000000000001B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +66,7 @@
 				AA000002000000000000010B /* Store */,
 				AA000002000000000000010C /* Calendar */,
 				AA000002000000000000010D /* Banner */,
+				AA000003000000000000010E /* Settings */,
 			);
 			path = CalendarBanner;
 			sourceTree = "<group>";
@@ -129,6 +132,14 @@
 				AA000002000000000000005B /* BannerWindowController.swift */,
 			);
 			path = Banner;
+			sourceTree = "<group>";
+		};
+		AA000003000000000000010E /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				AA000003000000000000001B /* SettingsView.swift */,
+			);
+			path = Settings;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -227,6 +238,7 @@
 				AA000002000000000000003A /* CalendarMonitor.swift in Sources */,
 				AA000002000000000000004A /* BannerView.swift in Sources */,
 				AA000002000000000000005A /* BannerWindowController.swift in Sources */,
+				AA000003000000000000001A /* SettingsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
