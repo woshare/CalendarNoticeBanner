@@ -54,18 +54,19 @@ final class CalendarMonitor {
         checkNow()
     }
 
-    /// 找到时间上最近的事件（含已开始的）并立即弹框，用于手动触发测试
+    /// 在前后一天范围内，找距当前时间最近且尚未结束的事件并立即弹框
     func forceCheckNow() {
         let now = Date()
-        let past = now.addingTimeInterval(-2 * 60 * 60)       // 往前看 2 小时
-        let lookahead = now.addingTimeInterval(24 * 60 * 60)  // 往后看 24 小时
+        let past = now.addingTimeInterval(-24 * 60 * 60)
+        let lookahead = now.addingTimeInterval(24 * 60 * 60)
         let predicate = eventStore.predicateForEvents(withStart: past, end: lookahead, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
 
-        // 取 startDate 离现在最近的事件（无论已开始还是未开始）
-        guard let ekEvent = ekEvents.min(by: {
-            abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
-        }) else { return }
+        // 只保留尚未结束的事件，再取 startDate 离现在最近的
+        guard let ekEvent = ekEvents
+            .filter({ $0.endDate > now })
+            .min(by: { abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now)) })
+        else { return }
 
         let event = CalendarEvent(
             id: ekEvent.eventIdentifier,
