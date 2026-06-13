@@ -46,8 +46,15 @@ final class BannerWindowController {
         panel.orderFrontRegardless()
         panels.append(panel)
 
-        // 入场：拖拽感动画，完成后等待 bannerDuration 秒再出场
-        animateEntry(panel: panel, from: startX, to: centerX, baseY: originY, duration: 2.0) { [weak self, weak panel] in
+        animateEntry(
+            panel: panel,
+            bannerWidth: width,
+            bannerHeight: height,
+            from: startX,
+            to: centerX,
+            baseY: originY,
+            duration: 2.0
+        ) { [weak self, weak panel] in
             guard let panel = panel else { return }
             let holdDuration = self?.preferences.bannerDuration ?? 5.0
             DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration) { [weak self, weak panel] in
@@ -60,9 +67,7 @@ final class BannerWindowController {
     private func dismiss(panel: NSPanel) {
         let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) } ?? NSScreen.main ?? NSScreen.screens[0]
         let endX = screen.frame.maxX + 20
-        let currentX = panel.frame.origin.x
-        let baseY = panel.frame.origin.y
-        animateExit(panel: panel, from: currentX, to: endX, baseY: baseY)
+        animateExit(panel: panel, from: panel.frame.origin.x, to: endX, baseY: panel.frame.origin.y)
     }
 
     private func remove(panel: NSPanel) {
@@ -70,50 +75,90 @@ final class BannerWindowController {
         panels.removeAll { $0 === panel }
     }
 
-    // MARK: - 入场动画：小人拖拽感
+    // MARK: - 入场：小人拉着横幅从左侧走入
     //
-    // X 轴：三次方时间扭曲 + spring 过冲
-    //   - 前段极慢（小人开始用力拉）
-    //   - 中段快速划过屏幕
-    //   - 末段轻微过冲 ~8% 后回弹落定
-    //
-    // Y 轴：走路节奏上下摆动 4pt，接近终点时逐渐消失
-    //   模拟小人步伐带动弹窗晃动
+    // 小人面朝右跑动，紧贴横幅右边缘（前方引导），步伐幅度比横幅大。
+    // 横幅抵达终点前小人渐隐离开。
+    // X：三次方时间扭曲 + spring 过冲，模拟"费力拽起重物"手感。
 
     private func animateEntry(
         panel: NSPanel,
+        bannerWidth: CGFloat,
+        bannerHeight: CGFloat,
         from startX: CGFloat,
         to endX: CGFloat,
         baseY: CGFloat,
         duration: Double,
         completion: @escaping () -> Void
     ) {
+        let charSize: CGFloat = 44
+        let charPanel = makeCharacterPanel(size: charSize)
+        charPanel.orderFrontRegardless()
+
         let startTime = Date()
         let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak panel] t in
-            guard let panel = panel else { t.invalidate(); return }
+            guard let panel = panel else {
+                t.invalidate()
+                charPanel.orderOut(nil)
+                return
+            }
             let elapsed = Date().timeIntervalSince(startTime)
             let p = min(elapsed / duration, 1.0)
 
-            // X：三次方扭曲时间轴 → spring
+            // X：三次方扭曲 → spring（前段极慢，中段冲刺，末段过冲回弹）
             let u = p * p * p
             let xFraction = CGFloat(1 - exp(-8 * u) * cos(10 * u))
-            let x = startX + (endX - startX) * xFraction
+            let bannerX = startX + (endX - startX) * xFraction
 
-            // Y：步伐摆动（3次完整波，幅度随接近终点而消减）
-            let bob = CGFloat(4.0 * (1 - p) * sin(6 * Double.pi * p))
+            // 横幅：微幅垂直晃动（2.5pt，模拟被拽动时的晃荡）
+            let bannerBob = CGFloat(2.5 * (1 - p) * sin(6 * Double.pi * p))
+            panel.setFrameOrigin(NSPoint(x: bannerX, y: baseY + bannerBob))
 
-            panel.setFrameOrigin(NSPoint(x: x, y: baseY + bob))
+            // 小人：紧贴横幅右边 4pt，步伐幅度更大（7pt），相位偏移 0.6 rad
+            let charX = bannerX + bannerWidth + 4
+            let charBob = CGFloat(7.0 * (1 - p) * sin(6 * Double.pi * p + 0.6))
+            let charY = baseY + bannerBob + charBob + (bannerHeight - charSize) / 2.0
+            charPanel.setFrameOrigin(NSPoint(x: charX, y: charY))
+
+            // 最后 25% 小人渐隐（横幅已接近终点，小人"放手"离开）
+            let charAlpha = p < 0.75 ? 1.0 : (1.0 - p) / 0.25
+            charPanel.alphaValue = CGFloat(max(0, charAlpha))
 
             if p >= 1.0 {
                 t.invalidate()
                 panel.setFrameOrigin(NSPoint(x: endX, y: baseY))
+                charPanel.orderOut(nil)
                 completion()
             }
         }
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    // MARK: - 出场动画：被猛地拽走（t^4 加速，越来越快）
+    // 小人使用 figure.run SF Symbol，独立透明小窗口
+    private func makeCharacterPanel(size: CGFloat) -> NSPanel {
+        let panel = NSPanel(
+            contentRect: NSRect(x: -400, y: 0, width: size, height: size),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        panel.level = .floating
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+
+        let view = NSHostingView(rootView:
+            Image(systemName: "figure.run")
+                .font(.system(size: size * 0.78, weight: .medium))
+                .foregroundStyle(.primary)
+                .frame(width: size, height: size)
+        )
+        panel.contentView = view
+        return panel
+    }
+
+    // MARK: - 出场：被猛地拽走（t^4 加速）
 
     private func animateExit(
         panel: NSPanel,
@@ -127,8 +172,7 @@ final class BannerWindowController {
             guard let panel = panel else { t.invalidate(); return }
             let elapsed = Date().timeIntervalSince(startTime)
             let p = min(elapsed / duration, 1.0)
-            let eased = p * p * p * p  // t^4：前段缓，末段猛冲
-            let x = startX + (endX - startX) * CGFloat(eased)
+            let x = startX + (endX - startX) * CGFloat(p * p * p * p)
             panel.setFrameOrigin(NSPoint(x: x, y: baseY))
             if p >= 1.0 {
                 t.invalidate()
