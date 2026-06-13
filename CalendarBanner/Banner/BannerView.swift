@@ -83,8 +83,8 @@ struct BannerView: View {
                         }
                     }
 
-                    // 加入按钮：始终显示，优先打开会议链接，否则打开日历详情
-                    Button("加入") {
+                    // 进入按钮：始终显示，优先打开会议链接，否则打开日历详情
+                    Button("进入") {
                         if preferences.showURL, let url = event.url {
                             NSWorkspace.shared.open(url)
                         } else {
