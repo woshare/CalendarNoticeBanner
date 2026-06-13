@@ -19,6 +19,7 @@
 		AA000002000000000000008A /* CalendarMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000008B /* CalendarMonitorTests.swift */; };
 		AA000002000000000000009A /* BannerWindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000009B /* BannerWindowControllerTests.swift */; };
 		AA000003000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003000000000000001B /* SettingsView.swift */; };
+		AA000004000000000000001A /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000004000000000000001B /* MenuBarController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +38,7 @@
 		AA000002000000000000008B /* CalendarMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarMonitorTests.swift; sourceTree = "<group>"; };
 		AA000002000000000000009B /* BannerWindowControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerWindowControllerTests.swift; sourceTree = "<group>"; };
 		AA000003000000000000001B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		AA000004000000000000001B /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -67,6 +69,7 @@
 				AA000002000000000000010C /* Calendar */,
 				AA000002000000000000010D /* Banner */,
 				AA000003000000000000010E /* Settings */,
+				AA000004000000000000010F /* Menu */,
 			);
 			path = CalendarBanner;
 			sourceTree = "<group>";
@@ -140,6 +143,14 @@
 				AA000003000000000000001B /* SettingsView.swift */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		AA000004000000000000010F /* Menu */ = {
+			isa = PBXGroup;
+			children = (
+				AA000004000000000000001B /* MenuBarController.swift */,
+			);
+			path = Menu;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -239,6 +250,7 @@
 				AA000002000000000000004A /* BannerView.swift in Sources */,
 				AA000002000000000000005A /* BannerWindowController.swift in Sources */,
 				AA000003000000000000001A /* SettingsView.swift in Sources */,
+				AA000004000000000000001A /* MenuBarController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
