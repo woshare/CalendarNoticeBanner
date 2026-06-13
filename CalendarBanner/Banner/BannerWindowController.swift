@@ -24,6 +24,12 @@ final class BannerWindowController {
             event: event,
             minutesBefore: minutesBefore,
             preferences: preferences,
+            onOpen: {
+                let interval = event.startDate.timeIntervalSinceReferenceDate
+                if let url = URL(string: "calshow:\(Int(interval))") {
+                    NSWorkspace.shared.open(url)
+                }
+            },
             onClose: { [weak panel, weak self] in
                 guard let panel = panel else { return }
                 self?.dismiss(panel: panel)
@@ -40,14 +46,14 @@ final class BannerWindowController {
         panel.orderFrontRegardless()
         panels.append(panel)
 
-        // 阶段1：入场滑动（0.5秒 easeOut）
-        animateX(panel: panel, from: startX, to: centerX, y: originY, duration: 0.5, easing: easeOut) { [weak self, weak panel] in
+        // 入场：1.0s spring 弹性缓动（慢起→加速→轻微过冲→回弹落定）
+        animateX(panel: panel, from: startX, to: centerX, y: originY, duration: 1.0, easing: springEaseOut) { [weak self, weak panel] in
             guard let panel = panel else { return }
             let duration = self?.preferences.bannerDuration ?? 5.0
             DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self, weak panel] in
                 guard let panel = panel else { return }
-                // 阶段3：出场滑动（0.5秒 easeIn）
-                self?.animateX(panel: panel, from: centerX, to: endX, y: originY, duration: 0.5, easing: self?.easeIn ?? { $0 }) { [weak self, weak panel] in
+                // 出场：0.6s 强 easeIn（越来越快，像被拉走）
+                self?.animateX(panel: panel, from: centerX, to: endX, y: originY, duration: 0.6, easing: self?.strongEaseIn ?? { $0 }) { [weak self, weak panel] in
                     guard let panel = panel else { return }
                     self?.remove(panel: panel)
                 }
@@ -60,7 +66,7 @@ final class BannerWindowController {
         let endX = screen.frame.maxX + 20
         let currentX = panel.frame.origin.x
         let originY = panel.frame.origin.y
-        animateX(panel: panel, from: currentX, to: endX, y: originY, duration: 0.4, easing: easeIn) { [weak self, weak panel] in
+        animateX(panel: panel, from: currentX, to: endX, y: originY, duration: 0.4, easing: strongEaseIn) { [weak self, weak panel] in
             guard let panel = panel else { return }
             self?.remove(panel: panel)
         }
@@ -71,7 +77,7 @@ final class BannerWindowController {
         panels.removeAll { $0 === panel }
     }
 
-    // MARK: - Timer-based animation（比 NSAnimationContext 对 NSPanel 更可靠）
+    // MARK: - Timer-based animation
 
     private func animateX(
         panel: NSPanel,
@@ -83,13 +89,11 @@ final class BannerWindowController {
         completion: @escaping () -> Void
     ) {
         let startTime = Date()
-        let fps: Double = 60
-        let timer = Timer(timeInterval: 1.0 / fps, repeats: true) { [weak panel] t in
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak panel] t in
             guard let panel = panel else { t.invalidate(); return }
             let elapsed = Date().timeIntervalSince(startTime)
             let rawProgress = min(elapsed / duration, 1.0)
-            let easedProgress = easing(rawProgress)
-            let x = startX + (endX - startX) * CGFloat(easedProgress)
+            let x = startX + (endX - startX) * CGFloat(easing(rawProgress))
             panel.setFrameOrigin(NSPoint(x: x, y: y))
             if rawProgress >= 1.0 {
                 t.invalidate()
@@ -99,12 +103,17 @@ final class BannerWindowController {
         RunLoop.main.add(timer, forMode: .common)
     }
 
-    private func easeOut(_ t: Double) -> Double {
-        1 - pow(1 - t, 3)
+    // 弹性缓动：慢起 → 加速 → 轻微过冲约 8% → 回弹落定
+    // 模拟小人拽着重物从左走到右，到位后惯性摆动一下
+    private func springEaseOut(_ t: Double) -> Double {
+        if t <= 0 { return 0 }
+        if t >= 1 { return 1 }
+        return 1 - exp(-8 * t) * cos(10 * t)
     }
 
-    private func easeIn(_ t: Double) -> Double {
-        t * t * t
+    // 强 easeIn：越来越快，模拟被猛地拽走
+    private func strongEaseIn(_ t: Double) -> Double {
+        t * t * t * t
     }
 
     // MARK: - 工厂

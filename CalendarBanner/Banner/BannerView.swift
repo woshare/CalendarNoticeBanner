@@ -5,6 +5,7 @@ struct BannerView: View {
     let event: CalendarEvent
     let minutesBefore: Int
     let preferences: PreferencesStore
+    var onOpen: (() -> Void)?
     var onClose: (() -> Void)?
 
     private var timeString: String {
@@ -30,27 +31,33 @@ struct BannerView: View {
                     .padding(.leading, 14)
 
                 HStack(spacing: 14) {
-                    // 左中：会议信息
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(event.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
+                    // 左中：会议信息（点击打开日历）
+                    Button {
+                        onOpen?()
+                    } label: {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(event.title)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
 
-                        HStack(spacing: 6) {
-                            if preferences.showLocation, let location = event.location {
-                                Label(location, systemImage: "location.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                            }
-                            if preferences.showAttendeeCount, event.attendeeCount > 0 {
-                                Label("\(event.attendeeCount)人", systemImage: "person.2.fill")
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
+                            HStack(spacing: 6) {
+                                if preferences.showLocation, let location = event.location {
+                                    Label(location, systemImage: "location.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                                if preferences.showAttendeeCount, event.attendeeCount > 0 {
+                                    Label("\(event.attendeeCount)人", systemImage: "person.2.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
                     }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
 
                     Spacer()
 
@@ -127,7 +134,8 @@ struct VisualEffectBlur: NSViewRepresentable {
             calendarColor: .systemBlue
         ),
         minutesBefore: 5,
-        preferences: PreferencesStore()
+        preferences: PreferencesStore(),
+        onOpen: { print("open calendar") }
     )
     .frame(width: 560)
     .padding()
