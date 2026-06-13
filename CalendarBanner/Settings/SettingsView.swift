@@ -57,7 +57,7 @@ struct SettingsView: View {
 
             Section("显示内容") {
                 Toggle("开始时间", isOn: $preferences.showTime)
-                Toggle("倒计时（如"5分钟后"）", isOn: $preferences.showCountdown)
+                Toggle("倒计时（如 5分钟后）", isOn: $preferences.showCountdown)
                 Toggle("会议地点", isOn: $preferences.showLocation)
                 Toggle("会议链接", isOn: $preferences.showURL)
                 Toggle("参与人数", isOn: $preferences.showAttendeeCount)
