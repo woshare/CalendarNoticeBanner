@@ -65,13 +65,15 @@ final class CalendarMonitor {
 
         print("[CalendarBanner] forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
 
-        let eligible = ekEvents.filter({ $0.endDate > now })
-        print("[CalendarBanner] forceCheckNow: 其中未结束 \(eligible.count) 个")
+        let notEnded = ekEvents.filter({ $0.endDate > now })
+        print("[CalendarBanner] forceCheckNow: 其中未结束 \(notEnded.count) 个")
 
-        guard let ekEvent = eligible.min(by: {
+        // 优先取未结束的最近事件；没有则兜底取整体最近事件
+        let candidates = notEnded.isEmpty ? ekEvents : notEnded
+        guard let ekEvent = candidates.min(by: {
             abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
         }) else {
-            print("[CalendarBanner] forceCheckNow: 没有找到未结束的事件，不弹框")
+            print("[CalendarBanner] forceCheckNow: ±24h 内没有任何事件，不弹框")
             return
         }
 
