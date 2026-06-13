@@ -1,4 +1,5 @@
 import SwiftUI
+import ServiceManagement
 
 struct SettingsView: View {
     @ObservedObject var preferences: PreferencesStore
@@ -61,9 +62,26 @@ struct SettingsView: View {
                 Toggle("会议链接", isOn: $preferences.showURL)
                 Toggle("参与人数", isOn: $preferences.showAttendeeCount)
             }
+
+            Section("启动") {
+                Toggle("登录时自动启动", isOn: Binding(
+                    get: { SMAppService.mainApp.status == .enabled },
+                    set: { enable in
+                        do {
+                            if enable {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            print("Launch at login error: \(error)")
+                        }
+                    }
+                ))
+            }
         }
         .formStyle(.grouped)
-        .frame(width: 420, height: 480)
+        .frame(width: 420, height: 560)
     }
 }
 
