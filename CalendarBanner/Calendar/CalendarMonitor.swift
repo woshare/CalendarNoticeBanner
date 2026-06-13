@@ -54,14 +54,18 @@ final class CalendarMonitor {
         checkNow()
     }
 
-    /// 找到最近的一个即将开始的事件并立即弹框，用于手动触发测试
+    /// 找到时间上最近的事件（含已开始的）并立即弹框，用于手动触发测试
     func forceCheckNow() {
         let now = Date()
-        let lookahead = now.addingTimeInterval(24 * 60 * 60)
-        let predicate = eventStore.predicateForEvents(withStart: now, end: lookahead, calendars: nil)
+        let past = now.addingTimeInterval(-2 * 60 * 60)       // 往前看 2 小时
+        let lookahead = now.addingTimeInterval(24 * 60 * 60)  // 往后看 24 小时
+        let predicate = eventStore.predicateForEvents(withStart: past, end: lookahead, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
 
-        guard let ekEvent = ekEvents.min(by: { $0.startDate < $1.startDate }) else { return }
+        // 取 startDate 离现在最近的事件（无论已开始还是未开始）
+        guard let ekEvent = ekEvents.min(by: {
+            abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
+        }) else { return }
 
         let event = CalendarEvent(
             id: ekEvent.eventIdentifier,
@@ -74,7 +78,8 @@ final class CalendarMonitor {
             calendarColor: NSColor(cgColor: ekEvent.calendar.cgColor) ?? .systemBlue
         )
 
-        let minutesBefore = max(1, Int(ekEvent.startDate.timeIntervalSince(now) / 60))
+        // 负数 = 已经过了多少分钟前开始；0 = 正在开始；正数 = 还有多少分钟
+        let minutesBefore = Int(ekEvent.startDate.timeIntervalSince(now) / 60)
         DispatchQueue.main.async { [weak self] in
             self?.onTrigger?(event, minutesBefore)
         }

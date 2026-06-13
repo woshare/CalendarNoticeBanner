@@ -15,7 +15,15 @@ struct BannerView: View {
     }
 
     private var countdownString: String {
-        minutesBefore == 1 ? "1分钟后" : "\(minutesBefore)分钟后"
+        if minutesBefore < 0 {
+            return "已开始 \(-minutesBefore) 分钟"
+        } else if minutesBefore == 0 {
+            return "正在开始"
+        } else if minutesBefore == 1 {
+            return "1 分钟后"
+        } else {
+            return "\(minutesBefore) 分钟后"
+        }
     }
 
     var body: some View {
