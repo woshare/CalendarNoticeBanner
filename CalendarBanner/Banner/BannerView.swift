@@ -125,10 +125,11 @@ struct BannerView: View {
 
                     Button { onClose?() } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 13))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .font(.system(size: 22))
+                            .foregroundStyle(.white.opacity(0.90))
                     }
                     .buttonStyle(.plain)
+                    .contentShape(Circle())
                 }
 
                 // Push content away from the dragon head (now on right)
