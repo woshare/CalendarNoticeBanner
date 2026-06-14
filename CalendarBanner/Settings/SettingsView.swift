@@ -36,6 +36,23 @@ struct SettingsView: View {
                 }
             }
 
+            Section("开机启动") {
+                Toggle("开机时自动启动", isOn: Binding(
+                    get: { SMAppService.mainApp.status == .enabled },
+                    set: { enable in
+                        do {
+                            if enable {
+                                try SMAppService.mainApp.register()
+                            } else {
+                                try SMAppService.mainApp.unregister()
+                            }
+                        } catch {
+                            print("Launch at login error: \(error)")
+                        }
+                    }
+                ))
+            }
+
             Section("横幅行为") {
                 HStack {
                     Text("自动消失时长")
@@ -98,22 +115,6 @@ struct SettingsView: View {
                 }
             }
 
-            Section("启动") {
-                Toggle("登录时自动启动", isOn: Binding(
-                    get: { SMAppService.mainApp.status == .enabled },
-                    set: { enable in
-                        do {
-                            if enable {
-                                try SMAppService.mainApp.register()
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                            }
-                        } catch {
-                            print("Launch at login error: \(error)")
-                        }
-                    }
-                ))
-            }
         }
         .formStyle(.grouped)
         .frame(width: 420, height: 600)
