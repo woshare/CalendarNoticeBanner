@@ -463,7 +463,8 @@ enum DragonBoatRenderer {
 
         // Crown decoration above head — three gold flame spikes
         let crownY = midY - headH * 0.38
-        for (j, xOff): [(Int, CGFloat)] in [(-18, -18), (0, 0), (18, 18)].enumerated() {
+        let crownOffsets: [CGFloat] = [-18, 0, 18]
+        for (j, xOff) in crownOffsets.enumerated() {
             let spikeH: CGFloat = j == 1 ? 22 : 16
             var spike = Path()
             spike.move(to: CGPoint(x: cx + xOff - 6,  y: crownY + spikeH))
