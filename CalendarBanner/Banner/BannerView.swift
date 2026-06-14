@@ -147,17 +147,16 @@ struct BannerView: View {
 
 enum DragonBoatRenderer {
 
-    // Palette
-    private static let hullGreen   = Color(red: 0.12, green: 0.52, blue: 0.20)
-    private static let hullDark    = Color(red: 0.07, green: 0.32, blue: 0.12)
-    private static let hullLight   = Color(red: 0.22, green: 0.68, blue: 0.32)
-    private static let scaleFill   = Color(red: 0.08, green: 0.38, blue: 0.14)
-    private static let gold        = Color(red: 0.95, green: 0.78, blue: 0.10)
-    private static let goldDark    = Color(red: 0.72, green: 0.52, blue: 0.04)
-    private static let red         = Color(red: 0.86, green: 0.12, blue: 0.10)
-    private static let orange      = Color(red: 0.93, green: 0.42, blue: 0.06)
-    private static let oarBrown    = Color(red: 0.58, green: 0.35, blue: 0.14)
-    private static let woodLight   = Color(red: 0.78, green: 0.56, blue: 0.28)
+    // Palette — tuned to match reference: bright green hull, orange oars, gold rails
+    private static let hullGreen   = Color(red: 0.16, green: 0.62, blue: 0.26)   // brighter green
+    private static let hullDark    = Color(red: 0.06, green: 0.30, blue: 0.10)
+    private static let hullLight   = Color(red: 0.28, green: 0.78, blue: 0.38)   // lighter highlight
+    private static let scaleFill   = Color(red: 0.10, green: 0.46, blue: 0.18)   // less dark scales
+    private static let gold        = Color(red: 0.97, green: 0.82, blue: 0.12)   // vivid gold
+    private static let goldDark    = Color(red: 0.74, green: 0.54, blue: 0.04)
+    private static let orange      = Color(red: 0.93, green: 0.48, blue: 0.08)   // warm orange tail
+    private static let oarOrange   = Color(red: 0.91, green: 0.50, blue: 0.10)   // oar paddle orange
+    private static let oarShaft    = Color(red: 0.75, green: 0.35, blue: 0.06)   // darker shaft
 
     // ── Entry point ────────────────────────────────────────────────────────
 
@@ -274,11 +273,16 @@ enum DragonBoatRenderer {
         botRail.closeSubpath()
         clipped.fill(botRail, with: .color(gold))
 
-        // ── Red accent stripe near stern ────────────────────────────────
-        let sx2 = right - 44.0
-        var stripe = Path()
-        stripe.addRect(CGRect(x: sx2, y: top + railH, width: 16, height: (bot - top) - railH * 2))
-        clipped.fill(stripe, with: .color(red.opacity(0.40)))
+        // ── Center glow — lighter green band like reference image ───────
+        let innerY = top + railH + 1
+        let innerH = (bot - railH) - innerY
+        var glow = clipped
+        glow.opacity = 0.30
+        glow.fill(
+            Path(roundedRect: CGRect(x: left + 6, y: innerY, width: right - left - 12, height: innerH),
+                 cornerRadius: 4),
+            with: .color(hullLight)
+        )
 
         // ── Hull outline ────────────────────────────────────────────────
         ctx.stroke(hull, with: .color(hullDark), lineWidth: 2.0)
@@ -335,24 +339,30 @@ enum DragonBoatRenderer {
         tipX: CGFloat,  tipY: CGFloat,
         facingUp: Bool
     ) {
-        // Shaft
+        // Shaft — dark orange
         var shaft = Path()
         shaft.move(to: CGPoint(x: baseX, y: baseY + (facingUp ? 2 : -2)))
         shaft.addLine(to: CGPoint(x: tipX, y: tipY + (facingUp ? 2 : -2)))
-        ctx.stroke(shaft, with: .color(oarBrown), lineWidth: 5)
+        ctx.stroke(shaft, with: .color(oarShaft), lineWidth: 5)
 
-        // Paddle blade (trapezoid)
+        // Paddle blade — orange rounded rect like reference image
         let bladeH: CGFloat = 14
-        let bladeW: CGFloat = 18
+        let bladeW: CGFloat = 20
         let by = facingUp ? tipY - bladeH : tipY
         var blade = Path()
-        blade.move(to: CGPoint(x: tipX - bladeW * 0.45, y: by))
-        blade.addLine(to: CGPoint(x: tipX + bladeW * 0.45, y: by))
-        blade.addLine(to: CGPoint(x: tipX + bladeW * 0.35, y: by + (facingUp ? -bladeH : bladeH)))
-        blade.addLine(to: CGPoint(x: tipX - bladeW * 0.35, y: by + (facingUp ? -bladeH : bladeH)))
-        blade.closeSubpath()
-        ctx.fill(blade,   with: .color(woodLight))
-        ctx.stroke(blade, with: .color(oarBrown), lineWidth: 0.8)
+        blade.addRoundedRect(
+            in: CGRect(x: tipX - bladeW / 2, y: by, width: bladeW, height: bladeH),
+            cornerSize: CGSize(width: 3, height: 3)
+        )
+        ctx.fill(blade,   with: .color(oarOrange))
+        ctx.stroke(blade, with: .color(oarShaft), lineWidth: 0.9)
+        // Highlight stripe on blade
+        var hl = ctx; hl.opacity = 0.35
+        hl.fill(
+            Path(roundedRect: CGRect(x: tipX - bladeW / 2 + 3, y: by + 3, width: bladeW - 6, height: 4),
+                 cornerRadius: 1.5),
+            with: .color(.white)
+        )
     }
 
     // ── 3. Dragon tail (right section) ────────────────────────────────────
@@ -394,7 +404,7 @@ enum DragonBoatRenderer {
             )
             path.closeSubpath()
 
-            ctx.fill(path,   with: .color(red.opacity(fin.alpha * Double(fin.scale))))
+            ctx.fill(path,   with: .color(orange.opacity(fin.alpha * Double(fin.scale))))
             ctx.stroke(path, with: .color(goldDark.opacity(0.8)), lineWidth: 1.2)
 
             // Gold edge highlight
