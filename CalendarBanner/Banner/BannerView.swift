@@ -57,8 +57,8 @@ struct BannerView: View {
 
             // ── Calendar event content (sits in the body section) ────────
             HStack(spacing: 0) {
-                // Push content past the dragon head
-                Spacer().frame(width: Layout.headW + 8)
+                // Push content past the dragon tail (now on left)
+                Spacer().frame(width: Layout.tailW + 8)
 
                 HStack(spacing: 10) {
                     // Event info — tap to open Calendar
@@ -131,8 +131,8 @@ struct BannerView: View {
                     .buttonStyle(.plain)
                 }
 
-                // Push content away from the tail
-                Spacer().frame(width: Layout.tailW + 8)
+                // Push content away from the dragon head (now on right)
+                Spacer().frame(width: Layout.headW + 8)
             }
             .padding(.horizontal, 4)
             .frame(height: Layout.bodyH)          // content is 80 pt tall …
@@ -161,6 +161,10 @@ enum DragonBoatRenderer {
     // ── Entry point ────────────────────────────────────────────────────────
 
     static func draw(ctx: GraphicsContext, size: CGSize, t: Double) {
+        var ctx  = ctx
+        // Flip canvas horizontally: head moves to right (front), tail to left (back)
+        ctx.concatenate(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: size.width, ty: 0))
+
         let w    = size.width
         let h    = size.height
         let midY = h / 2
