@@ -162,189 +162,150 @@ enum DragonBoatRenderer {
 
     static func draw(ctx: GraphicsContext, size: CGSize, t: Double) {
         var ctx  = ctx
+        // Flip canvas horizontally: head moves to right (front), tail to left (back)
         ctx.concatenate(CGAffineTransform(a: -1, b: 0, c: 0, d: 1, tx: size.width, ty: 0))
 
         let w    = size.width
         let h    = size.height
         let midY = h / 2
 
-        let bodyTop:   CGFloat = Layout.oarExtra
-        let bodyBot:   CGFloat = h - Layout.oarExtra
-        let bodyLeft:  CGFloat = Layout.headW - 6
-        let bodyRight: CGFloat = w - Layout.tailW + 6
+        let bodyTop:   CGFloat = Layout.oarExtra            // 25
+        let bodyBot:   CGFloat = h - Layout.oarExtra        // 105
+        let bodyLeft:  CGFloat = Layout.headW - 6           // 76 — slight overlap with head
+        let bodyRight: CGFloat = w - Layout.tailW + 6       // overlap with tail
 
-        drawWaterSplash(ctx: ctx, size: size, t: t, bodyLeft: bodyLeft)
-        drawGlowAura(ctx: ctx, t: t, left: bodyLeft, right: bodyRight, top: bodyTop, bot: bodyBot)
-        drawBoatHull(ctx: ctx, left: bodyLeft, right: bodyRight,
-                     top: bodyTop, bot: bodyBot, midY: midY)
-        drawOars(ctx: ctx, t: t, left: bodyLeft, right: bodyRight,
-                 top: bodyTop, bot: bodyBot)
-        drawTail(ctx: ctx, t: t, bodyRight: bodyRight, midY: midY,
+        // Draw back → front
+        drawBoatHull(ctx: ctx,
+                     left: bodyLeft, right: bodyRight,
+                     top: bodyTop,   bot: bodyBot, midY: midY)
+        drawOars(ctx: ctx, t: t,
+                 left: bodyLeft, right: bodyRight,
+                 top: bodyTop,   bot: bodyBot)
+        drawTail(ctx: ctx, t: t,
+                 bodyRight: bodyRight, midY: midY,
                  top: bodyTop, bot: bodyBot, rightEdge: w)
         drawDragonHead(ctx: ctx, midY: midY, t: t)
     }
 
-    // ── 0. Rainbow water splash ────────────────────────────────────────────
-
-    private static func drawWaterSplash(
-        ctx: GraphicsContext, size: CGSize, t: Double, bodyLeft: CGFloat
-    ) {
-        let baseY = size.height - 2
-        let splashCX = bodyLeft + 28
-        let drops: [(Color, CGFloat, CGFloat)] = [
-            (Color(red: 1.0, green: 0.28, blue: 0.28), -34, 0),
-            (Color(red: 1.0, green: 0.60, blue: 0.08), -17, 8),
-            (Color(red: 0.22, green: 0.80, blue: 0.30),  0, 12),
-            (Color(red: 0.18, green: 0.55, blue: 1.00),  17, 8),
-            (Color(red: 0.78, green: 0.26, blue: 1.00),  34, 0),
-        ]
-        for (i, (col, xOff, yBase)) in drops.enumerated() {
-            let anim = CGFloat(sin(t * 2.8 + Double(i) * 0.55) * 4)
-            let dx = splashCX + xOff
-            let tipY = baseY - 28 - yBase - anim
-            var drop = Path()
-            drop.move(to: CGPoint(x: dx - 5, y: baseY))
-            drop.addQuadCurve(to: CGPoint(x: dx, y: tipY),
-                              control: CGPoint(x: dx - 13, y: baseY - 18))
-            drop.addQuadCurve(to: CGPoint(x: dx + 5, y: baseY),
-                              control: CGPoint(x: dx + 13, y: baseY - 18))
-            drop.closeSubpath()
-            var gc = ctx; gc.opacity = 0.75
-            gc.fill(drop, with: .color(col))
-        }
-        // White foam at hull bottom
-        var foam = ctx; foam.opacity = 0.22 + 0.10 * sin(t * 3.0)
-        foam.stroke(Path { p in
-            p.move(to: CGPoint(x: bodyLeft + 10, y: baseY))
-            p.addLine(to: CGPoint(x: size.width - Layout.tailW - 10, y: baseY))
-        }, with: .color(.white), lineWidth: 5)
-    }
-
-    // ── 0b. Outer glow aura around hull ───────────────────────────────────
-
-    private static func drawGlowAura(
-        ctx: GraphicsContext, t: Double,
-        left: CGFloat, right: CGFloat,
-        top: CGFloat, bot: CGFloat
-    ) {
-        let pulse = 0.85 + 0.15 * sin(t * 1.3)
-        let passes: [(CGFloat, Double, Color)] = [
-            (30, 0.07 * pulse, .white),
-            (20, 0.10 * pulse, gold),
-            (12, 0.16 * pulse, gold),
-            (6,  0.22 * pulse, gold),
-        ]
-        for (e, alpha, col) in passes {
-            let l = left  - e * 0.35
-            let r = right + e * 0.35
-            let t2 = top  - e
-            let b2 = bot  + e
-            var p = Path()
-            p.move(to: CGPoint(x: l, y: t2))
-            p.addCurve(to: CGPoint(x: r, y: t2),
-                       control1: CGPoint(x: l + (r-l)*0.3, y: t2 - e * 0.6),
-                       control2: CGPoint(x: l + (r-l)*0.7, y: t2 - e * 0.6))
-            p.addLine(to: CGPoint(x: r, y: b2))
-            p.addCurve(to: CGPoint(x: l, y: b2),
-                       control1: CGPoint(x: l + (r-l)*0.7, y: b2 + e * 0.6),
-                       control2: CGPoint(x: l + (r-l)*0.3, y: b2 + e * 0.6))
-            p.closeSubpath()
-            var gc = ctx; gc.opacity = alpha
-            gc.fill(p, with: .color(col))
-        }
-    }
-
-    // ── 1. Boat hull ──────────────────────────────────────────────────────
+    // ── 1. Boat hull (middle section) ──────────────────────────────────────
 
     private static func drawBoatHull(
         ctx: GraphicsContext,
         left: CGFloat, right: CGFloat,
         top: CGFloat,  bot: CGFloat, midY: CGFloat
     ) {
+        // Outer hull path — slightly curved top & bottom like a real hull
         var hull = Path()
         hull.move(to: CGPoint(x: left,  y: top))
-        hull.addCurve(to: CGPoint(x: right, y: top),
-                      control1: CGPoint(x: left  + (right-left)*0.3, y: top - 5),
-                      control2: CGPoint(x: left  + (right-left)*0.7, y: top - 5))
+        hull.addCurve(
+            to: CGPoint(x: right, y: top),
+            control1: CGPoint(x: left  + (right - left) * 0.3, y: top - 5),
+            control2: CGPoint(x: left  + (right - left) * 0.7, y: top - 5)
+        )
         hull.addLine(to: CGPoint(x: right, y: bot))
-        hull.addCurve(to: CGPoint(x: left, y: bot),
-                      control1: CGPoint(x: left + (right-left)*0.7, y: bot + 5),
-                      control2: CGPoint(x: left + (right-left)*0.3, y: bot + 5))
+        hull.addCurve(
+            to: CGPoint(x: left, y: bot),
+            control1: CGPoint(x: left + (right - left) * 0.7, y: bot + 5),
+            control2: CGPoint(x: left + (right - left) * 0.3, y: bot + 5)
+        )
         hull.closeSubpath()
 
-        // Radial gradient fill — bright center like reference image
-        let cx = (left + right) / 2
-        let brightGreen = Color(red: 0.32, green: 0.82, blue: 0.42)
-        ctx.fill(hull, with: .radialGradient(
-            Gradient(colors: [brightGreen, hullGreen]),
-            center: CGPoint(x: cx, y: midY),
-            startRadius: 0,
-            endRadius: (right - left) * 0.55
-        ))
+        // Base fill
+        ctx.fill(hull, with: .color(hullGreen))
 
+        // ── Overlapping fish-scale pattern ──────────────────────────────
         var clipped = ctx
         clipped.clip(to: hull)
 
-        // Fish-scale texture
         let sw: CGFloat = 22
-        var col = 0; var sx = left + 8.0
-        let rows: [CGFloat] = [midY - 22, midY, midY + 22]
+        let sh: CGFloat = 14
+        var col = 0
+        var sx = left + 8.0
+        let rowCenters: [CGFloat] = [midY - 22, midY, midY + 22]
         while sx < right - 6 {
             let xOff: CGFloat = col % 2 == 0 ? 0 : sw * 0.5
-            for ry in rows {
+            for ry in rowCenters {
+                // Each scale = upper arc (convex upward)
                 var arc = Path()
-                arc.addArc(center: CGPoint(x: sx + xOff, y: ry + 5),
-                           radius: sw * 0.56,
-                           startAngle: .degrees(198), endAngle: .degrees(342),
-                           clockwise: false)
+                arc.addArc(
+                    center: CGPoint(x: sx + xOff, y: ry + sh * 0.35),
+                    radius: sw * 0.56,
+                    startAngle: .degrees(195),
+                    endAngle:   .degrees(345),
+                    clockwise:  false
+                )
                 arc.closeSubpath()
                 clipped.fill(arc,   with: .color(scaleFill))
-                clipped.stroke(arc, with: .color(hullDark.opacity(0.55)), lineWidth: 0.85)
+                clipped.stroke(arc, with: .color(hullDark.opacity(0.65)), lineWidth: 0.9)
             }
-            sx += sw * 0.80; col += 1
+            sx += sw * 0.80
+            col += 1
         }
 
-        // Gold top rail
-        let railH: CGFloat = 8
+        // ── Top rail (gold) ─────────────────────────────────────────────
+        let railH: CGFloat = 7
         var topRail = Path()
-        topRail.move(to: CGPoint(x: left, y: top))
-        topRail.addCurve(to: CGPoint(x: right, y: top),
-                         control1: CGPoint(x: left+(right-left)*0.3, y: top-5),
-                         control2: CGPoint(x: left+(right-left)*0.7, y: top-5))
+        topRail.move(to: CGPoint(x: left,  y: top))
+        topRail.addCurve(
+            to: CGPoint(x: right, y: top),
+            control1: CGPoint(x: left  + (right - left) * 0.3, y: top - 5),
+            control2: CGPoint(x: left  + (right - left) * 0.7, y: top - 5)
+        )
         topRail.addLine(to: CGPoint(x: right, y: top + railH))
-        topRail.addCurve(to: CGPoint(x: left, y: top + railH),
-                         control1: CGPoint(x: left+(right-left)*0.7, y: top+railH-5),
-                         control2: CGPoint(x: left+(right-left)*0.3, y: top+railH-5))
+        topRail.addCurve(
+            to: CGPoint(x: left, y: top + railH),
+            control1: CGPoint(x: left  + (right - left) * 0.7, y: top + railH - 5),
+            control2: CGPoint(x: left  + (right - left) * 0.3, y: top + railH - 5)
+        )
         topRail.closeSubpath()
         clipped.fill(topRail, with: .color(gold))
 
-        // Second gold accent stripe
-        clipped.fill(Path(roundedRect:
-            CGRect(x: left, y: top + railH + 4, width: right - left, height: 3),
-                          cornerRadius: 1), with: .color(gold.opacity(0.55)))
-
-        // Gold bottom rail
+        // ── Bottom keel strip (gold) ────────────────────────────────────
         var botRail = Path()
-        botRail.move(to: CGPoint(x: left, y: bot - railH))
+        botRail.move(to: CGPoint(x: left,  y: bot - railH))
         botRail.addLine(to: CGPoint(x: right, y: bot - railH))
         botRail.addLine(to: CGPoint(x: right, y: bot))
-        botRail.addCurve(to: CGPoint(x: left, y: bot),
-                         control1: CGPoint(x: left+(right-left)*0.7, y: bot+5),
-                         control2: CGPoint(x: left+(right-left)*0.3, y: bot+5))
+        botRail.addCurve(
+            to: CGPoint(x: left, y: bot),
+            control1: CGPoint(x: left + (right - left) * 0.7, y: bot + 5),
+            control2: CGPoint(x: left + (right - left) * 0.3, y: bot + 5)
+        )
         botRail.closeSubpath()
         clipped.fill(botRail, with: .color(gold))
 
+        // ── Center glow — lighter green band like reference image ───────
+        let innerY = top + railH + 1
+        let innerH = (bot - railH) - innerY
+        var glow = clipped
+        glow.opacity = 0.30
+        glow.fill(
+            Path(roundedRect: CGRect(x: left + 6, y: innerY, width: right - left - 12, height: innerH),
+                 cornerRadius: 4),
+            with: .color(hullLight)
+        )
+
+        // ── Hull outline ────────────────────────────────────────────────
         ctx.stroke(hull, with: .color(hullDark), lineWidth: 2.0)
-        ctx.stroke(Path { p in
-            p.move(to: CGPoint(x: left, y: top + railH))
-            p.addCurve(to: CGPoint(x: right, y: top + railH),
-                       control1: CGPoint(x: left+(right-left)*0.3, y: top+railH-5),
-                       control2: CGPoint(x: left+(right-left)*0.7, y: top+railH-5))
-        }, with: .color(goldDark), lineWidth: 1.2)
-        ctx.stroke(Path { p in
-            p.move(to: CGPoint(x: left, y: bot - railH))
-            p.addLine(to: CGPoint(x: right, y: bot - railH))
-        }, with: .color(goldDark), lineWidth: 1.2)
+
+        // Gold rim lines
+        ctx.stroke(
+            Path { p in
+                p.move(to: CGPoint(x: left,  y: top + railH))
+                p.addCurve(
+                    to: CGPoint(x: right, y: top + railH),
+                    control1: CGPoint(x: left  + (right - left) * 0.3, y: top + railH - 5),
+                    control2: CGPoint(x: left  + (right - left) * 0.7, y: top + railH - 5)
+                )
+            },
+            with: .color(goldDark), lineWidth: 1.2
+        )
+        ctx.stroke(
+            Path { p in
+                p.move(to: CGPoint(x: left,  y: bot - railH))
+                p.addLine(to: CGPoint(x: right, y: bot - railH))
+            },
+            with: .color(goldDark), lineWidth: 1.2
+        )
     }
 
     // ── 2. Animated oars ──────────────────────────────────────────────────
@@ -354,12 +315,17 @@ enum DragonBoatRenderer {
         left: CGFloat, right: CGFloat,
         top: CGFloat,  bot: CGFloat
     ) {
-        let oarH = Layout.oarExtra
-        let oarXs: [CGFloat] = stride(from: left + 45, through: right - 35, by: 68).map { $0 }
+        let oarH   = Layout.oarExtra
+        let oarXs: [CGFloat] = stride(
+            from: left + 45, through: right - 35, by: 68
+        ).map { $0 }
+
         for (i, ox) in oarXs.enumerated() {
-            let phase    = Double(i) * .pi / 2.0
+            let phase = Double(i) * .pi / 2.0
+            // Top and bottom oars row in OPPOSITE phase (like real dragon boat)
             let topSwing = CGFloat(sin(t * .pi * 2.0 + phase) * 9)
             let botSwing = CGFloat(sin(t * .pi * 2.0 + phase + .pi) * 9)
+
             drawSingleOar(ctx: ctx, baseX: ox, baseY: top,
                           tipX: ox + topSwing * 0.6, tipY: top - oarH + 4, facingUp: true)
             drawSingleOar(ctx: ctx, baseX: ox, baseY: bot,
@@ -373,64 +339,88 @@ enum DragonBoatRenderer {
         tipX: CGFloat,  tipY: CGFloat,
         facingUp: Bool
     ) {
+        // Shaft — dark orange
         var shaft = Path()
         shaft.move(to: CGPoint(x: baseX, y: baseY + (facingUp ? 2 : -2)))
         shaft.addLine(to: CGPoint(x: tipX, y: tipY + (facingUp ? 2 : -2)))
         ctx.stroke(shaft, with: .color(oarShaft), lineWidth: 5)
 
-        let bladeH: CGFloat = 14, bladeW: CGFloat = 20
+        // Paddle blade — orange rounded rect like reference image
+        let bladeH: CGFloat = 14
+        let bladeW: CGFloat = 20
         let by = facingUp ? tipY - bladeH : tipY
         var blade = Path()
-        blade.addRoundedRect(in: CGRect(x: tipX - bladeW/2, y: by, width: bladeW, height: bladeH),
-                             cornerSize: CGSize(width: 3, height: 3))
+        blade.addRoundedRect(
+            in: CGRect(x: tipX - bladeW / 2, y: by, width: bladeW, height: bladeH),
+            cornerSize: CGSize(width: 3, height: 3)
+        )
         ctx.fill(blade,   with: .color(oarOrange))
         ctx.stroke(blade, with: .color(oarShaft), lineWidth: 0.9)
-        var hl = ctx; hl.opacity = 0.38
-        hl.fill(Path(roundedRect: CGRect(x: tipX - bladeW/2 + 3, y: by + 3,
-                                         width: bladeW - 6, height: 4),
-                     cornerRadius: 1.5), with: .color(.white))
+        // Highlight stripe on blade
+        var hl = ctx; hl.opacity = 0.35
+        hl.fill(
+            Path(roundedRect: CGRect(x: tipX - bladeW / 2 + 3, y: by + 3, width: bladeW - 6, height: 4),
+                 cornerRadius: 1.5),
+            with: .color(.white)
+        )
     }
 
-    // ── 3. Dragon tail ────────────────────────────────────────────────────
+    // ── 3. Dragon tail (right section) ────────────────────────────────────
 
     private static func drawTail(
         ctx: GraphicsContext, t: Double,
         bodyRight: CGFloat, midY: CGFloat,
         top: CGFloat, bot: CGFloat, rightEdge: CGFloat
     ) {
-        let flicker = CGFloat(sin(t * 3.2) * 2.5)
+        // Dragon boat tail = layered upward-sweeping fins (like a fish fan tail)
+        // Three fins, each slightly more elevated
         let finData: [(yOff: CGFloat, alpha: CGFloat, scale: CGFloat)] = [
-            (-20, 0.95, 1.0),
-            ( -4, 0.80, 0.85),
-            ( 14, 0.65, 0.70),
+            (-18, 0.95, 1.0),
+            (  0, 0.85, 0.85),
+            ( 18, 0.70, 0.70),
         ]
+        let flicker = CGFloat(sin(t * 3.2) * 2)
+
         for (i, fin) in finData.enumerated() {
             let tipX = rightEdge - 4 + CGFloat(i) * 3
-            let tipY = top - 24 + fin.yOff + flicker * 0.5 * CGFloat(3 - i)
+            let tipY = top - 20 + fin.yOff + flicker * 0.5 * CGFloat(3 - i)
+
             var path = Path()
-            path.move(to: CGPoint(x: bodyRight, y: midY - 14 + fin.yOff * 0.4))
-            path.addCurve(to: CGPoint(x: tipX, y: tipY),
-                          control1: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.4,
-                                            y: midY - 10 + fin.yOff * 0.3),
-                          control2: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.75,
-                                            y: tipY + 16))
-            path.addCurve(to: CGPoint(x: bodyRight, y: midY + 14 + fin.yOff * 0.4),
-                          control1: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.65,
-                                            y: tipY + 26),
-                          control2: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.35,
-                                            y: midY + 12 + fin.yOff * 0.35))
+            // Fin root at bodyRight, spreads to tail tip
+            path.move(to: CGPoint(x: bodyRight, y: midY - 12 + fin.yOff * 0.4))
+            path.addCurve(
+                to: CGPoint(x: tipX, y: tipY),
+                control1: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.4,
+                                  y: midY - 8 + fin.yOff * 0.3),
+                control2: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.75,
+                                  y: tipY + 14)
+            )
+            path.addCurve(
+                to: CGPoint(x: bodyRight, y: midY + 12 + fin.yOff * 0.4),
+                control1: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.65,
+                                  y: tipY + 22),
+                control2: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.35,
+                                  y: midY + 10 + fin.yOff * 0.35)
+            )
             path.closeSubpath()
+
             ctx.fill(path,   with: .color(orange.opacity(fin.alpha * Double(fin.scale))))
             ctx.stroke(path, with: .color(goldDark.opacity(0.8)), lineWidth: 1.2)
+
+            // Gold edge highlight
             var edge = Path()
-            edge.move(to: CGPoint(x: bodyRight, y: midY - 14 + fin.yOff * 0.4))
-            edge.addCurve(to: CGPoint(x: tipX, y: tipY),
-                          control1: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.4,
-                                            y: midY - 10 + fin.yOff * 0.3),
-                          control2: CGPoint(x: bodyRight + (rightEdge-bodyRight)*0.75,
-                                            y: tipY + 16))
-            ctx.stroke(edge, with: .color(gold.opacity(fin.alpha * 0.75)), lineWidth: 1.2)
+            edge.move(to: CGPoint(x: bodyRight, y: midY - 12 + fin.yOff * 0.4))
+            edge.addCurve(
+                to: CGPoint(x: tipX, y: tipY),
+                control1: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.4,
+                                  y: midY - 8 + fin.yOff * 0.3),
+                control2: CGPoint(x: bodyRight + (rightEdge - bodyRight) * 0.75,
+                                  y: tipY + 14)
+            )
+            ctx.stroke(edge, with: .color(gold.opacity(fin.alpha * 0.7)), lineWidth: 1.0)
         }
+
+        // Base connecting block between hull and fins
         var block = Path()
         block.move(to: CGPoint(x: bodyRight - 4, y: top))
         block.addLine(to: CGPoint(x: rightEdge - 18, y: top + 8))
@@ -439,75 +429,66 @@ enum DragonBoatRenderer {
         block.closeSubpath()
         ctx.fill(block,   with: .color(hullGreen))
         ctx.stroke(block, with: .color(hullDark), lineWidth: 1.5)
-        let connW = rightEdge - 18 - (bodyRight - 3)
-        ctx.fill(Path(roundedRect: CGRect(x: bodyRight-3, y: top+2, width: connW, height: 7),
-                      cornerRadius: 2), with: .color(gold))
-        ctx.fill(Path(roundedRect: CGRect(x: bodyRight-3, y: bot-9, width: connW, height: 7),
-                      cornerRadius: 2), with: .color(gold))
+        ctx.fill(Path(roundedRect:
+            CGRect(x: bodyRight - 3, y: top + 2, width: rightEdge - bodyRight - 15, height: 6),
+                      cornerRadius: 2),
+                 with: .color(gold))
+        ctx.fill(Path(roundedRect:
+            CGRect(x: bodyRight - 3, y: bot - 8, width: rightEdge - bodyRight - 15, height: 6),
+                      cornerRadius: 2),
+                 with: .color(gold))
     }
 
-    // ── 4. Dragon head ────────────────────────────────────────────────────
+    // ── 4. Dragon head (left section) ─────────────────────────────────────
 
     private static func drawDragonHead(ctx: GraphicsContext, midY: CGFloat, t: Double) {
-        let cx: CGFloat = Layout.headW / 2
-        let wave = CGFloat(sin(t * 1.5) * 2.5)
+        let cx: CGFloat = Layout.headW / 2      // horizontal center of head section
+        let headH: CGFloat = Layout.panelH      // head uses full panel height
 
-        // Large pulsing glow behind head
-        let pulse = 0.18 + 0.09 * sin(t * 1.7)
-        var gCtx = ctx; gCtx.opacity = pulse
-        gCtx.fill(Path(ellipseIn: CGRect(x: cx-52, y: midY-56, width: 104, height: 112)),
-                  with: .color(gold))
+        // Glowing halo (pulsing)
+        let pulse = CGFloat(0.15 + 0.07 * sin(t * 1.6))
+        var g = ctx
+        g.opacity = Double(pulse)
+        g.fill(Path(ellipseIn: CGRect(x: cx - 44, y: midY - 44, width: 88, height: 88)),
+               with: .color(.orange))
 
-        // ── Golden mane — 5 large teardrop petals ─────────────────────
-        let petals: [(CGFloat, CGFloat, CGFloat, CGFloat, CGFloat)] = [
-            // tipX,        tipY,              baseX,   baseY,       halfW
-            (cx - 40, midY - 54 + wave,        cx - 12, midY - 14,   9),
-            (cx - 22, midY - 65 + wave,        cx -  5, midY - 12,  11),
-            (cx -  2, midY - 59 + wave,        cx +  5, midY - 10,  10),
-            (cx + 15, midY - 47 + wave * 0.7,  cx + 14, midY -  8,   8),
-            (cx - 50, midY - 18 + wave * 0.5,  cx - 20, midY +  6,   7),
-        ]
-        for (tipX, tipY, bx, by, hw) in petals {
-            let tip  = CGPoint(x: tipX, y: tipY)
-            let bL   = CGPoint(x: bx - hw, y: by)
-            let bR   = CGPoint(x: bx + hw, y: by - 4)
-            let cL   = CGPoint(x: bL.x - 6, y: (bL.y + tipY) / 2)
-            let cR   = CGPoint(x: bR.x + 6, y: (bR.y + tipY) / 2)
-            var petal = Path()
-            petal.move(to: bL)
-            petal.addQuadCurve(to: tip,  control: cL)
-            petal.addQuadCurve(to: bR,   control: cR)
-            petal.closeSubpath()
-            ctx.fill(petal,   with: .color(gold))
-            ctx.stroke(petal, with: .color(goldDark), lineWidth: 0.9)
-            // Inner lighter highlight
-            let tipI = CGPoint(x: tipX + (bx-tipX)*0.28, y: tipY + (by-tipY)*0.28)
-            var inner = Path()
-            inner.move(to: CGPoint(x: bL.x+3, y: bL.y+2))
-            inner.addQuadCurve(to: tipI, control: CGPoint(x: cL.x+2, y: cL.y))
-            inner.addLine(to: CGPoint(x: bR.x-3, y: bR.y+2))
-            inner.closeSubpath()
-            var hl = ctx; hl.opacity = 0.42
-            hl.fill(inner, with: .color(Color(red: 1.0, green: 0.96, blue: 0.55)))
-        }
-
-        // Neck connector
+        // Neck connector — blends head into hull
         let neckX = Layout.headW - 6.0
         var neck = Path()
-        neck.move(to: CGPoint(x: neckX-4, y: midY - Layout.bodyH/2))
-        neck.addCurve(to: CGPoint(x: neckX-4, y: midY + Layout.bodyH/2),
-                      control1: CGPoint(x: neckX+8, y: midY - Layout.bodyH/2),
-                      control2: CGPoint(x: neckX+8, y: midY + Layout.bodyH/2))
-        neck.addLine(to: CGPoint(x: neckX+4, y: midY + Layout.bodyH/2))
-        neck.addCurve(to: CGPoint(x: neckX+4, y: midY - Layout.bodyH/2),
-                      control1: CGPoint(x: neckX+12, y: midY + Layout.bodyH/2),
-                      control2: CGPoint(x: neckX+12, y: midY - Layout.bodyH/2))
+        neck.move(to: CGPoint(x: neckX - 4, y: midY - Layout.bodyH / 2))
+        neck.addCurve(
+            to: CGPoint(x: neckX - 4, y: midY + Layout.bodyH / 2),
+            control1: CGPoint(x: neckX + 8, y: midY - Layout.bodyH / 2),
+            control2: CGPoint(x: neckX + 8, y: midY + Layout.bodyH / 2)
+        )
+        neck.addLine(to: CGPoint(x: neckX + 4, y: midY + Layout.bodyH / 2))
+        neck.addCurve(
+            to: CGPoint(x: neckX + 4, y: midY - Layout.bodyH / 2),
+            control1: CGPoint(x: neckX + 12, y: midY + Layout.bodyH / 2),
+            control2: CGPoint(x: neckX + 12, y: midY - Layout.bodyH / 2)
+        )
         neck.closeSubpath()
         ctx.fill(neck, with: .color(hullGreen))
 
-        // Dragon face emoji (mirrored by parent transform → faces right)
-        let face = ctx.resolve(Text("🐲").font(.system(size: 72)))
+        // Dragon face emoji — 🐲 faces forward, 72 pt fills the head zone nicely
+        let face = ctx.resolve(
+            Text("🐲").font(.system(size: 72))
+        )
         ctx.draw(face, at: CGPoint(x: cx, y: midY - 4), anchor: .center)
+
+        // Crown decoration above head — three gold flame spikes
+        let crownY = midY - headH * 0.38
+        let crownOffsets: [CGFloat] = [-18, 0, 18]
+        for (j, xOff) in crownOffsets.enumerated() {
+            let spikeH: CGFloat = j == 1 ? 22 : 16
+            var spike = Path()
+            spike.move(to: CGPoint(x: cx + xOff - 6,  y: crownY + spikeH))
+            spike.addLine(to: CGPoint(x: cx + xOff,    y: crownY))
+            spike.addLine(to: CGPoint(x: cx + xOff + 6, y: crownY + spikeH))
+            spike.closeSubpath()
+            ctx.fill(spike,   with: .color(j == 1 ? gold : orange))
+            ctx.stroke(spike, with: .color(goldDark), lineWidth: 0.8)
+        }
     }
 }
 
