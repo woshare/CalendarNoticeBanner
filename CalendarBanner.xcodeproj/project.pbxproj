@@ -20,12 +20,14 @@
 		AA000002000000000000009A /* BannerWindowControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000002000000000000009B /* BannerWindowControllerTests.swift */; };
 		AA000003000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003000000000000001B /* SettingsView.swift */; };
 		AA000004000000000000001A /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000004000000000000001B /* MenuBarController.swift */; };
+		AA000005000000000000001A /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000005000000000000001B /* AppIcon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		AA000001000000000000001B /* CalendarBannerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerApp.swift; sourceTree = "<group>"; };
 		AA00000100000000000000F0 /* CalendarBanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetBell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000100000000000000F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		AA000005000000000000001B /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		AA000001000000000000002B /* CalendarBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerTests.swift; sourceTree = "<group>"; };
 		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetBellTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000002000000000000001B /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
@@ -64,6 +66,7 @@
 			children = (
 				AA000001000000000000001B /* CalendarBannerApp.swift */,
 				AA00000100000000000000F1 /* Info.plist */,
+				AA000005000000000000001B /* AppIcon.icns */,
 				AA000002000000000000010A /* Models */,
 				AA000002000000000000010B /* Store */,
 				AA000002000000000000010C /* Calendar */,
@@ -233,6 +236,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AA000005000000000000001A /* AppIcon.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
