@@ -35,9 +35,11 @@ final class MenuBarController {
         settingsItem.target = self
         menu.addItem(settingsItem)
 
+        #if DEBUG
         let previewItem = NSMenuItem(title: "测试横幅预览", action: #selector(showTestBanner), keyEquivalent: "t")
         previewItem.target = self
         menu.addItem(previewItem)
+        #endif
 
         let forceCheckItem = NSMenuItem(title: "立即检查日历", action: #selector(forceCheckNow), keyEquivalent: "r")
         forceCheckItem.target = self
@@ -109,6 +111,7 @@ final class MenuBarController {
         onForceCheck?()
     }
 
+    #if DEBUG
     @objc private func showTestBanner() {
         let testEvent = CalendarEvent(
             id: "test-preview",
@@ -122,4 +125,6 @@ final class MenuBarController {
         )
         bannerController.show(event: testEvent, minutesBefore: 5)
     }
+    #endif
+
 }
