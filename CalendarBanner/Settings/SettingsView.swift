@@ -5,6 +5,7 @@ import AppKit
 struct SettingsView: View {
     @ObservedObject var preferences: PreferencesStore
     @State private var newReminderMinutes: Int = 10
+    @State private var launchStatusMessage: String? = nil
 
     var body: some View {
         Form {
@@ -43,14 +44,24 @@ struct SettingsView: View {
                         do {
                             if enable {
                                 try SMAppService.mainApp.register()
+                                launchStatusMessage = "✓ 已开启，下次开机将自动启动"
                             } else {
                                 try SMAppService.mainApp.unregister()
+                                launchStatusMessage = "✓ 已关闭，下次开机不再自动启动"
                             }
                         } catch {
-                            print("Launch at login error: \(error)")
+                            launchStatusMessage = "操作失败：\(error.localizedDescription)"
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                            launchStatusMessage = nil
                         }
                     }
                 ))
+                if let msg = launchStatusMessage {
+                    Text(msg)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
 
             Section("横幅行为") {
