@@ -38,30 +38,55 @@ struct SettingsView: View {
             }
 
             Section("开机启动") {
-                Toggle("开机时自动启动", isOn: Binding(
-                    get: { SMAppService.mainApp.status == .enabled },
-                    set: { enable in
-                        do {
-                            if enable {
-                                try SMAppService.mainApp.register()
-                                launchStatusMessage = "✓ 已开启，下次开机将自动启动"
-                            } else {
-                                try SMAppService.mainApp.unregister()
-                                launchStatusMessage = "✓ 已关闭，下次开机不再自动启动"
+                if #available(macOS 13.0, *) {
+                    Toggle("开机时自动启动", isOn: Binding(
+                        get: { SMAppService.mainApp.status == .enabled },
+                        set: { enable in
+                            do {
+                                if enable {
+                                    try SMAppService.mainApp.register()
+                                    launchStatusMessage = "✓ 已开启，下次开机将自动启动"
+                                } else {
+                                    try SMAppService.mainApp.unregister()
+                                    launchStatusMessage = "✓ 已关闭，下次开机不再自动启动"
+                                }
+                            } catch {
+                                launchStatusMessage = "操作失败：\(error.localizedDescription)"
                             }
-                        } catch {
-                            launchStatusMessage = "操作失败：\(error.localizedDescription)"
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                launchStatusMessage = nil
+                            }
                         }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                            launchStatusMessage = nil
-                        }
+                    ))
+                    if let msg = launchStatusMessage {
+                        Text(msg)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                ))
-                if let msg = launchStatusMessage {
-                    Text(msg)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                } else {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("请在「系统偏好设置 → 用户与群组 → 登录项」中手动添加 MeetBell。")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Button("打开登录项设置") {
+                            NSWorkspace.shared.open(
+                                URL(string: "x-apple.systempreferences:com.apple.preferences.users")!
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                    }
+                    .padding(.vertical, 4)
                 }
+            }
+
+            Section("横幅皮肤") {
+                Picker("皮肤", selection: $preferences.bannerSkin) {
+                    ForEach(BannerSkinID.selectableCases, id: \.self) { skin in
+                        Text(skin.displayName).tag(skin)
+                    }
+                }
+                .pickerStyle(.inline)
+                .labelsHidden()
             }
 
             Section("横幅行为") {
@@ -125,10 +150,20 @@ struct SettingsView: View {
                         .frame(width: 40)
                 }
             }
-
         }
-        .formStyle(.grouped)
+        .applyGroupedFormStyle()
         .frame(width: 420, height: 600)
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func applyGroupedFormStyle() -> some View {
+        if #available(macOS 13.0, *) {
+            self.formStyle(.grouped)
+        } else {
+            self
+        }
     }
 }
 

@@ -1,14 +1,14 @@
 import SwiftUI
 import AppKit
 
-// MARK: - Layout constants shared by view + renderer
+// MARK: - Layout constants shared by BannerView + BannerWindowController
 
-private enum Layout {
-    static let headW:     CGFloat = 82     // dragon head section width
-    static let tailW:     CGFloat = 56     // tail section width
-    static let bodyH:     CGFloat = 80     // boat body height (content zone)
-    static let oarExtra:  CGFloat = 25     // oars protrude this far above/below body
-    static var panelH:    CGFloat { bodyH + oarExtra * 2 }  // 130 pt total panel height
+enum BannerLayout {
+    static let headW:    CGFloat = 82
+    static let tailW:    CGFloat = 56
+    static let bodyH:    CGFloat = 80
+    static let oarExtra: CGFloat = 25
+    static var panelH:   CGFloat { bodyH + oarExtra * 2 }  // 130
 }
 
 // MARK: - BannerView
@@ -44,7 +44,26 @@ struct BannerView: View {
         return "\(m)分\(String(format: "%02d", s))秒"
     }
 
+    private var resolvedSkin: BannerSkinID {
+        preferences.bannerSkin.resolved()
+    }
+
     var body: some View {
+        if resolvedSkin == .minimal {
+            MinimalBannerView(
+                event: event,
+                minutesBefore: minutesBefore,
+                onOpen:   onOpen ?? {},
+                onClose:  onClose ?? {},
+                onSnooze: onSnooze ?? {}
+            )
+        } else {
+            dragonBoatBody
+        }
+    }
+
+    @ViewBuilder
+    private var dragonBoatBody: some View {
         ZStack {
             // ── Dragon boat art (animated, non-interactive) ──────────────
             TimelineView(.animation(minimumInterval: 1.0 / 24.0)) { tl in
@@ -58,7 +77,7 @@ struct BannerView: View {
             // ── Calendar event content (sits in the body section) ────────
             HStack(spacing: 0) {
                 // Push content past the dragon tail (now on left)
-                Spacer().frame(width: Layout.tailW + 8)
+                Spacer().frame(width: BannerLayout.tailW + 8)
 
                 HStack(spacing: 10) {
                     // Event info — tap to open Calendar
@@ -133,10 +152,10 @@ struct BannerView: View {
                 }
 
                 // Push content away from the dragon head (now on right)
-                Spacer().frame(width: Layout.headW + 8)
+                Spacer().frame(width: BannerLayout.headW + 8)
             }
             .padding(.horizontal, 4)
-            .frame(height: Layout.bodyH)          // content is 80 pt tall …
+            .frame(height: BannerLayout.bodyH)          // content is 80 pt tall …
             .frame(maxHeight: .infinity)           // … centered in the 130-pt panel
         }
         .onReceive(ticker) { now = $0 }
@@ -169,10 +188,10 @@ enum DragonBoatRenderer {
         let h    = size.height
         let midY = h / 2
 
-        let bodyTop:   CGFloat = Layout.oarExtra            // 25
-        let bodyBot:   CGFloat = h - Layout.oarExtra        // 105
-        let bodyLeft:  CGFloat = Layout.headW - 6           // 76 — slight overlap with head
-        let bodyRight: CGFloat = w - Layout.tailW + 6       // overlap with tail
+        let bodyTop:   CGFloat = BannerLayout.oarExtra            // 25
+        let bodyBot:   CGFloat = h - BannerLayout.oarExtra        // 105
+        let bodyLeft:  CGFloat = BannerLayout.headW - 6           // 76 — slight overlap with head
+        let bodyRight: CGFloat = w - BannerLayout.tailW + 6       // overlap with tail
 
         // Draw back → front
         drawBoatHull(ctx: ctx,
@@ -315,7 +334,7 @@ enum DragonBoatRenderer {
         left: CGFloat, right: CGFloat,
         top: CGFloat,  bot: CGFloat
     ) {
-        let oarH   = Layout.oarExtra
+        let oarH   = BannerLayout.oarExtra
         let oarXs: [CGFloat] = stride(
             from: left + 45, through: right - 35, by: 68
         ).map { $0 }
@@ -442,8 +461,8 @@ enum DragonBoatRenderer {
     // ── 4. Dragon head (left section) ─────────────────────────────────────
 
     private static func drawDragonHead(ctx: GraphicsContext, midY: CGFloat, t: Double) {
-        let cx: CGFloat = Layout.headW / 2      // horizontal center of head section
-        let headH: CGFloat = Layout.panelH      // head uses full panel height
+        let cx: CGFloat = BannerLayout.headW / 2      // horizontal center of head section
+        let headH: CGFloat = BannerLayout.panelH      // head uses full panel height
 
         // Glowing halo (pulsing)
         let pulse = CGFloat(0.15 + 0.07 * sin(t * 1.6))
@@ -453,19 +472,19 @@ enum DragonBoatRenderer {
                with: .color(.orange))
 
         // Neck connector — blends head into hull
-        let neckX = Layout.headW - 6.0
+        let neckX = BannerLayout.headW - 6.0
         var neck = Path()
-        neck.move(to: CGPoint(x: neckX - 4, y: midY - Layout.bodyH / 2))
+        neck.move(to: CGPoint(x: neckX - 4, y: midY - BannerLayout.bodyH / 2))
         neck.addCurve(
-            to: CGPoint(x: neckX - 4, y: midY + Layout.bodyH / 2),
-            control1: CGPoint(x: neckX + 8, y: midY - Layout.bodyH / 2),
-            control2: CGPoint(x: neckX + 8, y: midY + Layout.bodyH / 2)
+            to: CGPoint(x: neckX - 4, y: midY + BannerLayout.bodyH / 2),
+            control1: CGPoint(x: neckX + 8, y: midY - BannerLayout.bodyH / 2),
+            control2: CGPoint(x: neckX + 8, y: midY + BannerLayout.bodyH / 2)
         )
-        neck.addLine(to: CGPoint(x: neckX + 4, y: midY + Layout.bodyH / 2))
+        neck.addLine(to: CGPoint(x: neckX + 4, y: midY + BannerLayout.bodyH / 2))
         neck.addCurve(
-            to: CGPoint(x: neckX + 4, y: midY - Layout.bodyH / 2),
-            control1: CGPoint(x: neckX + 12, y: midY + Layout.bodyH / 2),
-            control2: CGPoint(x: neckX + 12, y: midY - Layout.bodyH / 2)
+            to: CGPoint(x: neckX + 4, y: midY - BannerLayout.bodyH / 2),
+            control1: CGPoint(x: neckX + 12, y: midY + BannerLayout.bodyH / 2),
+            control2: CGPoint(x: neckX + 12, y: midY - BannerLayout.bodyH / 2)
         )
         neck.closeSubpath()
         ctx.fill(neck, with: .color(hullGreen))

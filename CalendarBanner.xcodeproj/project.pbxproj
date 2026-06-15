@@ -21,6 +21,8 @@
 		AA000003000000000000001A /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000003000000000000001B /* SettingsView.swift */; };
 		AA000004000000000000001A /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000004000000000000001B /* MenuBarController.swift */; };
 		AA000005000000000000001A /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000005000000000000001B /* AppIcon.icns */; };
+		AA000006000000000000001A /* BannerSkin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000006000000000000001B /* BannerSkin.swift */; };
+		AA000007000000000000001A /* MinimalBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000007000000000000001B /* MinimalBannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +30,8 @@
 		AA00000100000000000000F0 /* CalendarBanner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeetBell.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA00000100000000000000F1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA000005000000000000001B /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
+		AA000006000000000000001B /* BannerSkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerSkin.swift; sourceTree = "<group>"; };
+		AA000007000000000000001B /* MinimalBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalBannerView.swift; sourceTree = "<group>"; };
 		AA000001000000000000002B /* CalendarBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerTests.swift; sourceTree = "<group>"; };
 		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetBellTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000002000000000000001B /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
@@ -136,6 +140,8 @@
 			children = (
 				AA000002000000000000004B /* BannerView.swift */,
 				AA000002000000000000005B /* BannerWindowController.swift */,
+				AA000006000000000000001B /* BannerSkin.swift */,
+				AA000007000000000000001B /* MinimalBannerView.swift */,
 			);
 			path = Banner;
 			sourceTree = "<group>";
@@ -255,6 +261,8 @@
 				AA000002000000000000005A /* BannerWindowController.swift in Sources */,
 				AA000003000000000000001A /* SettingsView.swift in Sources */,
 				AA000004000000000000001A /* MenuBarController.swift in Sources */,
+				AA000006000000000000001A /* BannerSkin.swift in Sources */,
+				AA000007000000000000001A /* MinimalBannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,7 +352,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -401,7 +409,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
 				SWIFT_COMPILATION_MODE = wholemodule;
@@ -415,7 +423,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -433,7 +441,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -456,7 +464,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -478,7 +486,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.meetbell.app";
 				PRODUCT_NAME = "$(TARGET_NAME)";

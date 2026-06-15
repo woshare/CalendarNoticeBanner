@@ -1,11 +1,15 @@
 import EventKit
 import AppKit
+import os
+
+private let logger = Logger(subsystem: "com.meetbell", category: "CalendarMonitor")
 
 final class CalendarMonitor {
     private let eventStore = EKEventStore()
     private var timer: Timer?
     private var firedKeys: [String: Date] = [:]
     private let preferences: PreferencesStore
+    private var changeDebounceTask: DispatchWorkItem?
 
     var onTrigger: ((CalendarEvent, Int) -> Void)?
     var onPermissionDenied: (() -> Void)?
@@ -26,12 +30,20 @@ final class CalendarMonitor {
             name: NSWorkspace.didWakeNotification,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(calendarStoreChanged),
+            name: .EKEventStoreChanged,
+            object: eventStore
+        )
     }
 
     func stop() {
         timer?.invalidate()
         timer = nil
+        changeDebounceTask?.cancel()
         NSWorkspace.shared.notificationCenter.removeObserver(self)
+        NotificationCenter.default.removeObserver(self, name: .EKEventStoreChanged, object: eventStore)
     }
 
     private func requestAccessIfNeeded() {
@@ -54,6 +66,17 @@ final class CalendarMonitor {
         checkNow()
     }
 
+    @objc private func calendarStoreChanged() {
+        changeDebounceTask?.cancel()
+        let task = DispatchWorkItem { [weak self] in
+            self?.eventStore.refreshSourcesIfNecessary()
+            self?.checkNow()
+            logger.debug("calendarStoreChanged: 日历变动，已重新检查")
+        }
+        changeDebounceTask = task
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: task)
+    }
+
     /// 在前后一天范围内，找距当前时间最近且尚未结束的事件并立即弹框
     func forceCheckNow() {
         eventStore.refreshSourcesIfNecessary()
@@ -63,21 +86,21 @@ final class CalendarMonitor {
         let predicate = eventStore.predicateForEvents(withStart: past, end: lookahead, calendars: nil)
         let ekEvents = eventStore.events(matching: predicate)
 
-        print("[MeetBell] forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
+        logger.debug("forceCheckNow: 找到 \(ekEvents.count) 个事件（±24h）")
 
         let notEnded = ekEvents.filter({ $0.endDate > now })
-        print("[MeetBell] forceCheckNow: 其中未结束 \(notEnded.count) 个")
+        logger.debug("forceCheckNow: 其中未结束 \(notEnded.count) 个")
 
         // 优先取未结束的最近事件；没有则兜底取整体最近事件
         let candidates = notEnded.isEmpty ? ekEvents : notEnded
         guard let ekEvent = candidates.min(by: {
             abs($0.startDate.timeIntervalSince(now)) < abs($1.startDate.timeIntervalSince(now))
         }) else {
-            print("[MeetBell] forceCheckNow: ±24h 内没有任何事件，不弹框")
+            logger.info("forceCheckNow: ±24h 内没有任何事件，不弹框")
             return
         }
 
-        print("[MeetBell] forceCheckNow: 选中事件「\(ekEvent.title ?? "")」startDate=\(ekEvent.startDate) endDate=\(ekEvent.endDate)")
+        logger.debug("forceCheckNow: 选中事件「\(ekEvent.title ?? "")」startDate=\(ekEvent.startDate) endDate=\(ekEvent.endDate)")
 
         let event = CalendarEvent(
             id: ekEvent.eventIdentifier,
@@ -91,7 +114,7 @@ final class CalendarMonitor {
         )
 
         let minutesBefore = Int(ekEvent.startDate.timeIntervalSince(now) / 60)
-        print("[MeetBell] forceCheckNow: 准备弹框，minutesBefore=\(minutesBefore)")
+        logger.info("forceCheckNow: 准备弹框，minutesBefore=\(minutesBefore)")
         DispatchQueue.main.async { [weak self] in
             self?.onTrigger?(event, minutesBefore)
         }

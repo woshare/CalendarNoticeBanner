@@ -89,6 +89,15 @@ final class PreferencesStore: ObservableObject {
         set { defaults.set(newValue, forKey: Keys.snoozeDuration); objectWillChange.send() }
     }
 
+    // 横幅皮肤，默认龙舟
+    var bannerSkin: BannerSkinID {
+        get {
+            let raw = defaults.string(forKey: Keys.bannerSkin) ?? BannerSkinID.dragonBoat.rawValue
+            return BannerSkinID(rawValue: raw) ?? .dragonBoat
+        }
+        set { defaults.set(newValue.rawValue, forKey: Keys.bannerSkin); objectWillChange.send() }
+    }
+
     private enum Keys {
         static let reminderMinutes   = "com.meetbell.reminderMinutes"
         static let bannerDuration    = "com.meetbell.bannerDuration"
@@ -102,9 +111,11 @@ final class PreferencesStore: ObservableObject {
         static let alertVolume       = "com.meetbell.alertVolume"
         static let snoozeDuration    = "com.meetbell.snoozeDuration"
 
+        static let bannerSkin        = "com.meetbell.bannerSkin"
+
         static let all = [reminderMinutes, bannerDuration, verticalPosition,
                           showTime, showCountdown, showLocation, showURL, showAttendeeCount,
-                          alertSound, alertVolume, snoozeDuration]
+                          alertSound, alertVolume, snoozeDuration, bannerSkin]
     }
 }
 

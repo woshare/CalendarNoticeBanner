@@ -1,5 +1,8 @@
 import AppKit
 import SwiftUI
+import os
+
+private let logger = Logger(subsystem: "com.meetbell", category: "BannerWindowController")
 
 final class BannerWindowController {
     private var panels: [NSPanel] = []
@@ -10,14 +13,14 @@ final class BannerWindowController {
     }
 
     func show(event: CalendarEvent, minutesBefore: Int) {
-        print("[MeetBell] show() called: \(event.title), minutesBefore=\(minutesBefore)")
+        logger.info("show: \(event.title), minutesBefore=\(minutesBefore)")
         guard let screen = screenForBanner() else { return }
 
-        let bannerW: CGFloat = Self.bannerWidth(forScreenWidth: screen.frame.width)
-        let bannerH: CGFloat = 80
-        let oarExtra: CGFloat = 22   // oars overhang above/below body
-        let totalW = bannerW
-        let panelH = bannerH + oarExtra * 2  // 124
+        let bannerW  = Self.bannerWidth(forScreenWidth: screen.frame.width)
+        let bannerH  = BannerLayout.bodyH
+        let oarExtra = BannerLayout.oarExtra
+        let totalW   = bannerW
+        let panelH   = BannerLayout.panelH
 
         let y = Self.bannerY(
             screenHeight: screen.frame.height,
