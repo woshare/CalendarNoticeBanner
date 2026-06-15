@@ -23,6 +23,7 @@
 		AA000005000000000000001A /* AppIcon.icns in Resources */ = {isa = PBXBuildFile; fileRef = AA000005000000000000001B /* AppIcon.icns */; };
 		AA000006000000000000001A /* BannerSkin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000006000000000000001B /* BannerSkin.swift */; };
 		AA000007000000000000001A /* MinimalBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000007000000000000001B /* MinimalBannerView.swift */; };
+		AA000008000000000000001A /* HolidayBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA000008000000000000001B /* HolidayBannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,6 +33,7 @@
 		AA000005000000000000001B /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		AA000006000000000000001B /* BannerSkin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerSkin.swift; sourceTree = "<group>"; };
 		AA000007000000000000001B /* MinimalBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MinimalBannerView.swift; sourceTree = "<group>"; };
+		AA000008000000000000001B /* HolidayBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HolidayBannerView.swift; sourceTree = "<group>"; };
 		AA000001000000000000002B /* CalendarBannerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarBannerTests.swift; sourceTree = "<group>"; };
 		AA00000100000000000000F2 /* CalendarBannerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MeetBellTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA000002000000000000001B /* CalendarEvent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarEvent.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				AA000002000000000000005B /* BannerWindowController.swift */,
 				AA000006000000000000001B /* BannerSkin.swift */,
 				AA000007000000000000001B /* MinimalBannerView.swift */,
+				AA000008000000000000001B /* HolidayBannerView.swift */,
 			);
 			path = Banner;
 			sourceTree = "<group>";
@@ -263,6 +266,7 @@
 				AA000004000000000000001A /* MenuBarController.swift in Sources */,
 				AA000006000000000000001A /* BannerSkin.swift in Sources */,
 				AA000007000000000000001A /* MinimalBannerView.swift in Sources */,
+				AA000008000000000000001A /* HolidayBannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
