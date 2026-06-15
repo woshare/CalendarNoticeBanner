@@ -19,6 +19,6 @@ enum BannerSkinID: String, CaseIterable, Codable {
 
     func resolved() -> BannerSkinID {
         guard self == .random else { return self }
-        return allCases.filter { $0 != .random }.randomElement() ?? .dragonBoat
+        return BannerSkinID.allCases.filter { $0 != .random }.randomElement() ?? .dragonBoat
     }
 }
