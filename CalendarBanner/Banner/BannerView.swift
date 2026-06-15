@@ -44,6 +44,21 @@ struct BannerView: View {
         return "\(m)分\(String(format: "%02d", s))秒"
     }
 
+    private var endTimeString: String? {
+        guard preferences.showEndTime else { return nil }
+        let cal = Calendar.current
+        let startDay = cal.startOfDay(for: event.startDate)
+        let endDay   = cal.startOfDay(for: event.endDate)
+        let f = DateFormatter()
+        f.dateFormat = "HH:mm"
+        let endStr = f.string(from: event.endDate)
+        if startDay == endDay {
+            return "\(f.string(from: event.startDate))–\(endStr)"
+        } else {
+            return "\(f.string(from: event.startDate))–次日\(endStr)"
+        }
+    }
+
     private var resolvedSkin: BannerSkinID {
         preferences.bannerSkin.resolved()
     }
@@ -53,6 +68,7 @@ struct BannerView: View {
             MinimalBannerView(
                 event: event,
                 minutesBefore: minutesBefore,
+                preferences: preferences,
                 onOpen:   onOpen ?? {},
                 onClose:  onClose ?? {},
                 onSnooze: onSnooze ?? {}
@@ -112,7 +128,7 @@ struct BannerView: View {
                     // Time & countdown
                     VStack(alignment: .trailing, spacing: 3) {
                         if preferences.showTime {
-                            Text(timeString)
+                            Text(endTimeString ?? timeString)
                                 .font(.system(size: 14, weight: .bold).monospacedDigit())
                                 .foregroundColor(.white)
                                 .shadow(color: .black.opacity(0.6), radius: 2, x: 0, y: 1)
