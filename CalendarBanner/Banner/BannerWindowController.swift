@@ -52,46 +52,94 @@ final class BannerWindowController {
         hostingView.layer?.masksToBounds = false
         panel.contentView = hostingView
 
-        let targetX = screen.frame.minX + (screen.frame.width - bannerW) / 2
-        let targetY = screen.frame.minY + y - (panelH - bannerH) / 2
-        // Start one panelH above target (higher Y = visually above in AppKit's bottom-left origin)
-        let offscreenY = targetY + CGFloat(panelH)
+        let startX  = screen.frame.minX - totalW - 20
+        let centerX = screen.frame.minX + (screen.frame.width - bannerW) / 2
+        let endX    = screen.frame.maxX + 20
+        let originY = screen.frame.minY + y - (panelH - bannerH) / 2
 
-        panel.setFrameOrigin(NSPoint(x: targetX, y: offscreenY))
+        panel.setFrameOrigin(NSPoint(x: startX, y: originY))
         panel.alphaValue = 0
         panel.orderFrontRegardless()
         panels.append(panel)
 
         playAlert()
 
-        NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.35
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-            panel.animator().setFrameOrigin(NSPoint(x: targetX, y: targetY))
-            panel.animator().alphaValue = 1
-        }, completionHandler: { [weak self, weak panel] in
+        // 入场：S 曲线滑入 + 步伐振动，开头 0.5s 淡入
+        animateEntry(panel: panel, from: startX, to: centerX, baseY: originY, duration: 5.0) { [weak self, weak panel] in
             guard let panel = panel else { return }
             let hold = self?.preferences.bannerDuration ?? 300.0
             DispatchQueue.main.asyncAfter(deadline: .now() + hold) { [weak self, weak panel] in
                 guard let panel = panel else { return }
-                self?.dismissWithAnimation(panel: panel)
+                self?.animateExit(panel: panel, from: centerX, to: endX, baseY: originY)
             }
-        })
+        }
     }
 
     private func dismiss(panel: NSPanel) {
-        dismissWithAnimation(panel: panel)
+        let screen = NSScreen.screens.first { $0.frame.contains(panel.frame.origin) }
+            ?? NSScreen.main ?? NSScreen.screens[0]
+        let endX = screen.frame.maxX + 20
+        animateExit(panel: panel, from: panel.frame.origin.x, to: endX, baseY: panel.frame.origin.y)
     }
 
-    private func dismissWithAnimation(panel: NSPanel) {
-        NSAnimationContext.runAnimationGroup({ ctx in
-            ctx.duration = 0.25
-            ctx.timingFunction = CAMediaTimingFunction(name: .easeIn)
-            panel.animator().alphaValue = 0
-        }, completionHandler: { [weak self, weak panel] in
-            guard let panel = panel else { return }
-            self?.remove(panel: panel)
-        })
+    // MARK: - 入场：平滑 S 曲线 + 步伐振动 + 淡入
+
+    private func animateEntry(
+        panel: NSPanel,
+        from startX: CGFloat,
+        to endX: CGFloat,
+        baseY: CGFloat,
+        duration: Double,
+        completion: @escaping () -> Void
+    ) {
+        let startTime = Date()
+        let fadeInDuration = 0.5  // 前 0.5s 淡入
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak panel] t in
+            guard let panel = panel else { t.invalidate(); return }
+            let elapsed = Date().timeIntervalSince(startTime)
+            let p = min(elapsed / duration, 1.0)
+
+            // 平滑 S 曲线：缓起→匀速→缓停
+            let smooth = p * p * (3.0 - 2.0 * p)
+            let x = startX + (endX - startX) * CGFloat(smooth)
+
+            // 步伐振动：到站后平息
+            let stepFreq = 3.0
+            let decayFactor = max(0.0, 1.0 - p * 1.4)
+            let bob = CGFloat(4.5 * decayFactor * sin(stepFreq * 2.0 * .pi * p * duration))
+
+            // 淡入：前 fadeInDuration 秒从 0 → 1
+            panel.alphaValue = CGFloat(min(elapsed / fadeInDuration, 1.0))
+
+            panel.setFrameOrigin(NSPoint(x: x, y: baseY + bob))
+
+            if p >= 1.0 {
+                t.invalidate()
+                panel.alphaValue = 1
+                panel.setFrameOrigin(NSPoint(x: endX, y: baseY))
+                completion()
+            }
+        }
+        RunLoop.main.add(timer, forMode: .common)
+    }
+
+    // MARK: - 出场：t⁴ 加速 + 末尾淡出
+
+    private func animateExit(panel: NSPanel, from startX: CGFloat, to endX: CGFloat, baseY: CGFloat) {
+        let startTime = Date()
+        let exitDuration = 0.55
+        let fadeOutStart = 0.75  // 后 25% 开始淡出（约 0.14s）
+        let timer = Timer(timeInterval: 1.0 / 60.0, repeats: true) { [weak self, weak panel] t in
+            guard let panel = panel else { t.invalidate(); return }
+            let p = min(Date().timeIntervalSince(startTime) / exitDuration, 1.0)
+            panel.setFrameOrigin(NSPoint(x: startX + (endX - startX) * CGFloat(p * p * p * p), y: baseY))
+            // 末尾淡出
+            if p >= fadeOutStart {
+                panel.alphaValue = CGFloat(1.0 - (p - fadeOutStart) / (1.0 - fadeOutStart))
+            }
+            if p >= 1.0 { t.invalidate(); self?.remove(panel: panel) }
+        }
+        RunLoop.main.add(timer, forMode: .common)
     }
 
     private func remove(panel: NSPanel) {
