@@ -64,7 +64,8 @@ struct BannerView: View {
     }
 
     var body: some View {
-        if resolvedSkin == .minimal {
+        switch resolvedSkin {
+        case .minimal:
             MinimalBannerView(
                 event: event,
                 minutesBefore: minutesBefore,
@@ -73,7 +74,17 @@ struct BannerView: View {
                 onClose:  onClose ?? {},
                 onSnooze: onSnooze ?? {}
             )
-        } else {
+        case .springFestival, .lanternFestival, .qingming, .midAutumn, .christmas:
+            HolidayBannerView(
+                event: event,
+                minutesBefore: minutesBefore,
+                skin: resolvedSkin,
+                preferences: preferences,
+                onOpen:   onOpen ?? {},
+                onClose:  onClose ?? {},
+                onSnooze: onSnooze ?? {}
+            )
+        default:
             dragonBoatBody
         }
     }

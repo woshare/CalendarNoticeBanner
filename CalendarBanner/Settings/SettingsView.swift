@@ -121,6 +121,7 @@ struct SettingsView: View {
                 Toggle("会议地点", isOn: $preferences.showLocation)
                 Toggle("会议链接", isOn: $preferences.showURL)
                 Toggle("参与人数", isOn: $preferences.showAttendeeCount)
+                Toggle("结束时间", isOn: $preferences.showEndTime)
             }
 
             Section("提醒音效") {
