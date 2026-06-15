@@ -68,6 +68,11 @@ final class PreferencesStore: ObservableObject {
         set { defaults.set(newValue, forKey: Keys.showAttendeeCount); objectWillChange.send() }
     }
 
+    var showEndTime: Bool {
+        get { defaults.object(forKey: Keys.showEndTime) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.showEndTime); objectWillChange.send() }
+    }
+
     // 铃声名称，默认 Glass
     var alertSound: String {
         get { defaults.string(forKey: Keys.alertSound) ?? "Glass" }
@@ -107,6 +112,7 @@ final class PreferencesStore: ObservableObject {
         static let showLocation      = "com.meetbell.showLocation"
         static let showURL           = "com.meetbell.showURL"
         static let showAttendeeCount = "com.meetbell.showAttendeeCount"
+        static let showEndTime       = "com.meetbell.showEndTime"
         static let alertSound        = "com.meetbell.alertSound"
         static let alertVolume       = "com.meetbell.alertVolume"
         static let snoozeDuration    = "com.meetbell.snoozeDuration"
@@ -115,7 +121,7 @@ final class PreferencesStore: ObservableObject {
 
         static let all = [reminderMinutes, bannerDuration, verticalPosition,
                           showTime, showCountdown, showLocation, showURL, showAttendeeCount,
-                          alertSound, alertVolume, snoozeDuration, bannerSkin]
+                          showEndTime, alertSound, alertVolume, snoozeDuration, bannerSkin]
     }
 }
 
