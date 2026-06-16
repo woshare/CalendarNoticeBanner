@@ -19,7 +19,7 @@ final class BannerWindowController {
         let bannerW  = Self.bannerWidth(forScreenWidth: screen.frame.width)
         let bannerH  = BannerLayout.bodyH
         let totalW   = bannerW
-        let panelH   = BannerLayout.panelH
+        let panelH   = BannerLayout.panelHeight(for: preferences.bannerSkin.resolved())
 
         let y = Self.bannerY(
             screenHeight: screen.frame.height,

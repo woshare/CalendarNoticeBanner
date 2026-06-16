@@ -12,15 +12,15 @@ struct MinimalBannerView: View {
     @State private var timeText: String = ""
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
-    // MARK: - Gradient from calendar color
-
     private var gradientColors: (Color, Color) {
         let ns = (event.calendarColor.usingColorSpace(.sRGB) ?? event.calendarColor)
         var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
         ns.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
-        let primary   = Color(hue: Double(h), saturation: Double(s),        brightness: Double(b))
+        let primary   = Color(hue: Double(h), saturation: Double(s), brightness: Double(b))
         let h2        = (Double(h) + 28.0/360.0).truncatingRemainder(dividingBy: 1.0)
-        let secondary = Color(hue: h2, saturation: max(0.25, Double(s) - 0.12), brightness: min(1.0, Double(b) + 0.22))
+        let secondary = Color(hue: h2,
+                              saturation: max(0.25, Double(s) - 0.10),
+                              brightness: min(1.0, Double(b) + 0.18))
         return (primary, secondary)
     }
 
@@ -42,8 +42,8 @@ struct MinimalBannerView: View {
     var body: some View {
         let (c1, c2) = gradientColors
         ZStack {
-            // Gradient background
-            RoundedRectangle(cornerRadius: 14)
+            // Capsule gradient background
+            Capsule()
                 .fill(
                     LinearGradient(
                         colors: [c1, c2],
@@ -52,17 +52,17 @@ struct MinimalBannerView: View {
                     )
                 )
 
-            // Top highlight line — light source feel
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+            // Top highlight
+            Capsule()
+                .stroke(Color.white.opacity(0.24), lineWidth: 1)
 
             // Content
             HStack(spacing: 12) {
-                // Left accent bar — white semi-transparent
+                // Left accent bar
                 RoundedRectangle(cornerRadius: 4)
                     .fill(Color.white.opacity(0.40))
                     .frame(width: 4)
-                    .padding(.vertical, 10)
+                    .padding(.vertical, 12)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(event.title)
@@ -94,10 +94,10 @@ struct MinimalBannerView: View {
 
                 HStack(spacing: 6) {
                     Button("稍后") { onSnooze() }
-                        .buttonStyle(GradientActionButtonStyle(prominent: false))
+                        .buttonStyle(CapsuleActionButtonStyle(prominent: false))
 
                     Button("打开") { onOpen() }
-                        .buttonStyle(GradientActionButtonStyle(prominent: true))
+                        .buttonStyle(CapsuleActionButtonStyle(prominent: true))
 
                     Button { onClose() } label: {
                         Image(systemName: "xmark")
@@ -107,10 +107,13 @@ struct MinimalBannerView: View {
                     .buttonStyle(.plain)
                     .frame(width: 22, height: 22)
                 }
+                .padding(.trailing, 4)
             }
-            .padding(.horizontal, 14)
+            .padding(.horizontal, 20)
         }
         .frame(height: BannerLayout.bodyH)
+        .clipShape(Capsule())
+        .shadow(color: .black.opacity(0.22), radius: 12, x: 0, y: 4)
         .onReceive(timer) { _ in updateTime() }
         .onAppear { updateTime() }
     }
@@ -127,20 +130,20 @@ struct MinimalBannerView: View {
     }
 }
 
-private struct GradientActionButtonStyle: ButtonStyle {
+private struct CapsuleActionButtonStyle: ButtonStyle {
     let prominent: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12, weight: .medium))
             .foregroundColor(prominent ? .white : .white.opacity(0.80))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 5)
             .background(
-                RoundedRectangle(cornerRadius: 6)
+                Capsule()
                     .fill(prominent ? Color.white.opacity(0.28) : Color.white.opacity(0.14))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 6)
+                        Capsule()
                             .stroke(Color.white.opacity(prominent ? 0.45 : 0.20), lineWidth: 0.8)
                     )
             )

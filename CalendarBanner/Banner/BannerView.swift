@@ -9,6 +9,18 @@ enum BannerLayout {
     static let bodyH:    CGFloat = 80
     static let oarExtra: CGFloat = 25
     static var panelH:   CGFloat { bodyH + oarExtra * 2 }  // 130
+
+    // Holiday skins use a taller panel so decorations can overflow above/below
+    static let holidayPanelH: CGFloat = 220
+
+    static func panelHeight(for skin: BannerSkinID) -> CGFloat {
+        switch skin {
+        case .springFestival, .lanternFestival, .qingming, .midAutumn, .christmas:
+            return holidayPanelH
+        default:
+            return panelH
+        }
+    }
 }
 
 // MARK: - BannerView
