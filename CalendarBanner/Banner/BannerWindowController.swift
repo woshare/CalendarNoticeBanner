@@ -126,6 +126,9 @@ final class BannerWindowController {
     // MARK: - 出场：t⁴ 加速 + 末尾淡出
 
     private func animateExit(panel: NSPanel, from startX: CGFloat, to endX: CGFloat, baseY: CGFloat) {
+        // 防止二次触发：如果 panel 已被移除（如用户手动关闭后 asyncAfter 到期又触发），直接忽略
+        guard panels.contains(where: { $0 === panel }) else { return }
+
         let startTime = Date()
         let exitDuration = 0.55
         let fadeOutStart = 0.75  // 后 25% 开始淡出（约 0.14s）
@@ -143,6 +146,7 @@ final class BannerWindowController {
     }
 
     private func remove(panel: NSPanel) {
+        panel.alphaValue = 0  // 确保不可见，防止 orderOut 在低版本 macOS 上有延迟
         panel.orderOut(nil)
         panels.removeAll { $0 === panel }
     }
